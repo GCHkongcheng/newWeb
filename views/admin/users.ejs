@@ -1,0 +1,38 @@
+<%- include('../partials/header', { title: '用户管理', user: user }) %>
+
+<div class="card">
+  <div style="margin-bottom: 20px">
+    <a href="/admin/dashboard" class="btn btn-secondary">← 返回后台首页</a>
+  </div>
+
+  <h1>用户管理</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>用户名</th>
+        <th>邮箱</th>
+        <th>角色</th>
+        <th>注册时间</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(u => { %>
+      <tr>
+        <td><%= u.username %></td>
+        <td><%= u.email %></td>
+        <td>
+          <% if (u.isAdmin) { %>
+          <span style="color: red; font-weight: bold">管理员</span>
+          <% } else { %>
+          <span style="color: green">普通用户</span>
+          <% } %>
+        </td>
+        <td><%= new Date(u.createdAt).toLocaleString('zh-CN') %></td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

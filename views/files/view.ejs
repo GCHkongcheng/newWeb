@@ -1,0 +1,48 @@
+<%- include('../partials/header', { title: '查看文件', user: user }) %>
+
+<div class="card">
+  <div style="margin-bottom: 20px">
+    <a href="/files" class="btn btn-secondary">← 返回文件列表</a>
+  </div>
+
+  <h1><%= file.originalName %></h1>
+
+  <div
+    style="
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 20px 0;
+    "
+  >
+    <p><strong>文件信息：</strong></p>
+    <p>上传者: <%= uploader.username %></p>
+    <p>大小: <%= (file.size / 1024).toFixed(2) %> KB</p>
+    <p>上传时间: <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %></p>
+    <p>状态: <%= file.isPublic ? '公开' : '私有' %></p>
+    <% if (file.description) { %>
+    <p>描述: <%= file.description %></p>
+    <% } %>
+  </div>
+
+  <div style="margin-bottom: 10px">
+    <a href="/files/download/<%= file.id %>" class="btn btn-primary"
+      >下载文件</a
+    >
+  </div>
+
+  <h2 style="margin-top: 30px; margin-bottom: 15px">文件内容：</h2>
+  <pre
+    style="
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 5px;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+      max-height: 600px;
+      overflow-y: auto;
+    "
+  ><code><%= content %></code></pre>
+</div>
+
+<%- include('../partials/footer') %>

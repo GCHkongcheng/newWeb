@@ -1,0 +1,50 @@
+<%- include('../partials/header', { title: '公共资源', user: user }) %>
+
+<div class="card">
+  <h1>公共资源区</h1>
+  <p style="color: #666; margin-bottom: 20px">这里展示所有用户公开分享的文件</p>
+
+  <% if (files.length === 0) { %>
+  <div class="empty-state">
+    <p style="font-size: 18px">暂无公共资源</p>
+    <p style="margin-top: 10px">上传文件时勾选"公开此文件"即可分享到这里</p>
+  </div>
+  <% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>文件名</th>
+        <th>上传者</th>
+        <th>描述</th>
+        <th>大小</th>
+        <th>上传时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% files.forEach(file => { %>
+      <tr>
+        <td><%= file.originalName %></td>
+        <td><%= file.uploaderName %></td>
+        <td><%= file.description || '-' %></td>
+        <td><%= (file.size / 1024).toFixed(2) %> KB</td>
+        <td><%= new Date(file.uploadedAt).toLocaleString('zh-CN') %></td>
+        <td>
+          <a
+            href="/files/view/<%= file.id %>"
+            class="btn btn-primary"
+            style="margin-right: 5px"
+            >查看</a
+          >
+          <a href="/files/download/<%= file.id %>" class="btn btn-secondary"
+            >下载</a
+          >
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%- include('../partials/footer') %>

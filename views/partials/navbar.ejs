@@ -1,0 +1,87 @@
+<nav>
+  <div class="nav-container">
+    <div class="nav-brand">
+      <a href="/">📁 个人网盘</a>
+    </div>
+    <ul class="nav-menu">
+      <% if (user) { %>
+      <li><a href="/files">我的文件</a></li>
+      <li><a href="/public">公共资源</a></li>
+      <% if (user.isAdmin) { %>
+      <li><a href="/admin/dashboard">后台管理</a></li>
+      <% } %>
+      <li class="nav-user">
+        <span>👤 <%= user.username %></span>
+        <a href="/auth/logout" class="logout-btn">退出</a>
+      </li>
+      <% } else { %>
+      <li><a href="/auth/login">登录</a></li>
+      <li><a href="/auth/register">注册</a></li>
+      <% } %>
+    </ul>
+  </div>
+</nav>
+
+<style>
+  nav {
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    margin-bottom: 30px;
+  }
+
+  .nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-brand a {
+    font-size: 20px;
+    font-weight: bold;
+    color: #667eea;
+    text-decoration: none;
+  }
+
+  .nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .nav-menu a {
+    color: #555;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .nav-menu a:hover {
+    color: #667eea;
+  }
+
+  .nav-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-user span {
+    color: #333;
+  }
+
+  .logout-btn {
+    background: #dc3545;
+    color: white !important;
+    padding: 5px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+  }
+
+  .logout-btn:hover {
+    background: #c82333;
+  }
+</style>

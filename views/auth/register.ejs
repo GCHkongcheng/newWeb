@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>用户注册 - 个人网盘系统</title>
+    <%- include('../partials/auth-layout-styles') %>
+  </head>
+  <body>
+    <div class="container">
+      <h1>用户注册</h1>
+
+      <% if (error) { %>
+      <div class="alert alert-error"><%= error %></div>
+      <% } %> <% if (success) { %>
+      <div class="alert alert-success"><%= success %></div>
+      <% } %>
+
+      <form method="POST" action="/auth/register" id="registerForm">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" name="username" id="username" required />
+        </div>
+
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" name="email" id="email" required />
+        </div>
+
+        <div class="form-group">
+          <label>验证码</label>
+          <div class="verification-group">
+            <input
+              type="text"
+              name="verificationCode"
+              id="verificationCode"
+              placeholder="请输入验证码"
+              required
+            />
+            <button type="button" id="sendCodeBtn">发送验证码</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>密码（至少6位）</label>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            required
+            minlength="6"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>确认密码</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            id="confirmPassword"
+            required
+            minlength="6"
+          />
+        </div>
+
+        <button type="submit" class="btn btn-primary">注册</button>
+      </form>
+
+      <div class="link">已有账号？ <a href="/auth/login">立即登录</a></div>
+    </div>
+
+    <script>
+      let countdown = 0;
+      const sendCodeBtn = document.getElementById("sendCodeBtn");
+      const usernameInput = document.getElementById("username");
+      const emailInput = document.getElementById("email");
+
+      sendCodeBtn.addEventListener("click", async () => {
+        const username = usernameInput.value.trim();
+        const email = emailInput.value.trim();
+
+        if (!username) {
+          alert("请输入用户名");
+          return;
+        }
+
+        if (!email) {
+          alert("请输入邮箱");
+          return;
+        }
+
+        if (countdown > 0) {
+          return;
+        }
+
+        sendCodeBtn.disabled = true;
+        sendCodeBtn.textContent = "发送中...";
+
+        try {
+          const response = await fetch("/auth/send-code", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username, email }),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            alert(result.message);
+            countdown = 60;
+            updateCountdown();
+          } else {
+            alert(result.message);
+            sendCodeBtn.disabled = false;
+            sendCodeBtn.textContent = "发送验证码";
+          }
+        } catch (error) {
+          alert("发送失败，请稍后重试");
+          sendCodeBtn.disabled = false;
+          sendCodeBtn.textContent = "发送验证码";
+        }
+      });
+
+      function updateCountdown() {
+        if (countdown > 0) {
+          sendCodeBtn.textContent = countdown + "秒后重试";
+          countdown--;
+          setTimeout(updateCountdown, 1000);
+        } else {
+          sendCodeBtn.disabled = false;
+          sendCodeBtn.textContent = "发送验证码";
+        }
+      }
+
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", (e) => {
+          const password = document.getElementById("password").value;
+          const confirmPassword =
+            document.getElementById("confirmPassword").value;
+
+          if (password !== confirmPassword) {
+            e.preventDefault();
+            alert("两次输入的密码不一致");
+          }
+        });
+    </script>
+  </body>
+</html>

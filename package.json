@@ -1,0 +1,30 @@
+{
+  "name": "personal-cloud-storage",
+  "version": "1.0.0",
+  "description": "个人网盘 + 文档存储 + 公共资源区",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "express",
+    "file-storage",
+    "cloud"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "ejs": "^3.1.9",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.7",
+    "bcryptjs": "^2.4.3",
+    "uuid": "^9.0.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
