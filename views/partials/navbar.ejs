@@ -1,87 +1,161 @@
-<nav>
-  <div class="nav-container">
-    <div class="nav-brand">
-      <a href="/">📁 个人网盘</a>
+<nav class="bg-white shadow-md sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex-shrink-0">
+        <a
+          href="/"
+          class="flex items-center space-x-2 text-primary hover:text-secondary transition-colors"
+        >
+          <i class="bi bi-cloud-arrow-up text-2xl"></i>
+          <span class="text-xl font-bold hidden sm:inline">个人网盘</span>
+        </a>
+      </div>
+
+      <!-- Desktop Menu -->
+      <div class="hidden md:flex items-center space-x-1">
+        <% if (user) { %>
+        <a
+          href="/files"
+          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
+        >
+          <i class="bi bi-folder"></i>
+          <span>我的文件</span>
+        </a>
+        <a
+          href="/files/trash"
+          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
+        >
+          <i class="bi bi-trash"></i>
+          <span>回收站</span>
+        </a>
+        <a
+          href="/public"
+          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
+        >
+          <i class="bi bi-globe"></i>
+          <span>公共资源</span>
+        </a>
+        <% if (user.isAdmin) { %>
+        <a
+          href="/admin/dashboard"
+          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
+        >
+          <i class="bi bi-gear"></i>
+          <span>后台管理</span>
+        </a>
+        <% } %>
+        <div
+          class="ml-4 flex items-center space-x-3 pl-4 border-l border-gray-300"
+        >
+          <span class="text-gray-700 flex items-center space-x-2">
+            <i class="bi bi-person-circle text-xl"></i>
+            <span class="font-medium"><%= user.username %></span>
+          </span>
+          <a
+            href="/auth/logout"
+            class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center space-x-1"
+          >
+            <i class="bi bi-box-arrow-right"></i>
+            <span>退出</span>
+          </a>
+        </div>
+        <% } else { %>
+        <a
+          href="/auth/login"
+          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200"
+        >
+          登录
+        </a>
+        <a
+          href="/auth/register"
+          class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-all duration-200"
+        >
+          注册
+        </a>
+        <% } %>
+      </div>
+
+      <!-- Mobile menu button -->
+      <div class="md:hidden">
+        <button
+          id="mobile-menu-btn"
+          class="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
+        >
+          <i class="bi bi-list text-2xl"></i>
+        </button>
+      </div>
     </div>
-    <ul class="nav-menu">
+  </div>
+
+  <!-- Mobile Menu -->
+  <div
+    id="mobile-menu"
+    class="hidden md:hidden bg-white border-t border-gray-200"
+  >
+    <div class="px-2 pt-2 pb-3 space-y-1">
       <% if (user) { %>
-      <li><a href="/files">我的文件</a></li>
-      <li><a href="/public">公共资源</a></li>
+      <a
+        href="/files"
+        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
+      >
+        <i class="bi bi-folder mr-2"></i>我的文件
+      </a>
+      <a
+        href="/files/trash"
+        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
+      >
+        <i class="bi bi-trash mr-2"></i>回收站
+      </a>
+      <a
+        href="/public"
+        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
+      >
+        <i class="bi bi-globe mr-2"></i>公共资源
+      </a>
       <% if (user.isAdmin) { %>
-      <li><a href="/admin/dashboard">后台管理</a></li>
+      <a
+        href="/admin/dashboard"
+        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
+      >
+        <i class="bi bi-gear mr-2"></i>后台管理
+      </a>
       <% } %>
-      <li class="nav-user">
-        <span>👤 <%= user.username %></span>
-        <a href="/auth/logout" class="logout-btn">退出</a>
-      </li>
+      <div class="pt-2 border-t border-gray-200">
+        <div class="px-3 py-2 text-gray-700">
+          <i class="bi bi-person-circle mr-2"></i><%= user.username %>
+        </div>
+        <a
+          href="/auth/logout"
+          class="block px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors mx-2"
+        >
+          <i class="bi bi-box-arrow-right mr-2"></i>退出
+        </a>
+      </div>
       <% } else { %>
-      <li><a href="/auth/login">登录</a></li>
-      <li><a href="/auth/register">注册</a></li>
+      <a
+        href="/auth/login"
+        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
+      >
+        登录
+      </a>
+      <a
+        href="/auth/register"
+        class="block px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-all mx-2"
+      >
+        注册
+      </a>
       <% } %>
-    </ul>
+    </div>
   </div>
 </nav>
 
-<style>
-  nav {
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 0;
-    margin-bottom: 30px;
-  }
-
-  .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .nav-brand a {
-    font-size: 20px;
-    font-weight: bold;
-    color: #667eea;
-    text-decoration: none;
-  }
-
-  .nav-menu {
-    display: flex;
-    list-style: none;
-    gap: 20px;
-    align-items: center;
-  }
-
-  .nav-menu a {
-    color: #555;
-    text-decoration: none;
-    transition: color 0.3s;
-  }
-
-  .nav-menu a:hover {
-    color: #667eea;
-  }
-
-  .nav-user {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .nav-user span {
-    color: #333;
-  }
-
-  .logout-btn {
-    background: #dc3545;
-    color: white !important;
-    padding: 5px 15px;
-    border-radius: 5px;
-    font-size: 14px;
-  }
-
-  .logout-btn:hover {
-    background: #c82333;
-  }
-</style>
+<script>
+  // Mobile menu toggle
+  document
+    .getElementById("mobile-menu-btn")
+    ?.addEventListener("click", function () {
+      const menu = document.getElementById("mobile-menu");
+      menu.classList.toggle("hidden");
+    });
+</script>

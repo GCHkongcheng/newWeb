@@ -2,6 +2,7 @@
 require("dotenv").config();
 
 const config = {
+  host: process.env.HOST || "0.0.0.0",
   port: process.env.PORT || 3000,
   sessionSecret:
     process.env.SESSION_SECRET || "change_this_secret_in_production",

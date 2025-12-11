@@ -2,6 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const config = require("../config/config");
+const iconv = require("iconv-lite");
 
 // 允许的文件扩展名
 const ALLOWED_EXTENSIONS = [
@@ -41,9 +42,18 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
+    // 处理中文文件名编码
+    const originalName = Buffer.from(file.originalname, "latin1").toString(
+      "utf8"
+    );
+
     // 生成唯一文件名
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
+    const ext = path.extname(originalName);
+
+    // 保存处理后的原始文件名到 req 对象
+    file.originalname = originalName;
+
     cb(null, file.fieldname + "-" + uniqueSuffix + ext);
   },
 });

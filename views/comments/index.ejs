@@ -1,0 +1,218 @@
+<%- include('../partials/header', { title: '文件评论', user: user }) %>
+
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Back Button -->
+  <div class="mb-6">
+    <a
+      href="/public"
+      class="inline-flex items-center space-x-2 text-primary hover:text-secondary transition-colors"
+    >
+      <i class="bi bi-arrow-left"></i>
+      <span>返回公共资源</span>
+    </a>
+  </div>
+
+  <!-- File Info Card -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+    <div class="p-6">
+      <div class="flex items-start justify-between flex-wrap gap-4">
+        <div class="flex items-start space-x-4">
+          <div class="flex-shrink-0">
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center"
+            >
+              <i class="bi bi-file-earmark-text text-2xl text-primary"></i>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+              <%= file.originalName %>
+            </h1>
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <span
+                ><i class="bi bi-person mr-1"></i><%= uploader.username %></span
+              >
+              <span
+                ><i class="bi bi-calendar mr-1"></i><%= new
+                Date(file.uploadedAt).toLocaleString('zh-CN') %></span
+              >
+              <span
+                ><i class="bi bi-hdd mr-1"></i><%= (file.size / 1024).toFixed(2)
+                %> KB</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <a
+            href="/files/view/<%= file.id %>"
+            class="px-4 py-2 bg-primary hover:bg-secondary text-white rounded-lg transition-all duration-200 flex items-center space-x-2"
+          >
+            <i class="bi bi-eye"></i>
+            <span>查看文件</span>
+          </a>
+          <a
+            href="/files/download/<%= file.id %>"
+            class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all duration-200 flex items-center space-x-2"
+          >
+            <i class="bi bi-download"></i>
+            <span>下载</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments Section -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+      <h2 class="text-xl font-bold text-gray-900 flex items-center">
+        <i class="bi bi-chat-dots mr-2 text-primary"></i>
+        评论 (<%= comments.length %>)
+      </h2>
+    </div>
+
+    <!-- Add Comment Form -->
+    <div class="p-6 border-b border-gray-200 bg-gray-50">
+      <form id="commentForm" class="space-y-3">
+        <textarea
+          id="commentContent"
+          rows="3"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all resize-none"
+          placeholder="发表你的评论..."
+          required
+        ></textarea>
+        <div class="flex justify-end">
+          <button
+            type="submit"
+            class="px-6 py-2 bg-primary hover:bg-secondary text-white rounded-lg transition-all duration-200 flex items-center space-x-2"
+          >
+            <i class="bi bi-send"></i>
+            <span>发表评论</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Comments List -->
+    <div class="divide-y divide-gray-200" id="commentsList">
+      <% if (comments.length === 0) { %>
+      <div class="p-12 text-center">
+        <i class="bi bi-chat-square-text text-6xl text-gray-300 mb-4"></i>
+        <p class="text-gray-500">还没有评论，来发表第一条评论吧！</p>
+      </div>
+      <% } else { %> <% comments.forEach(comment => { %>
+      <div
+        class="p-6 hover:bg-gray-50 transition-colors"
+        data-comment-id="<%= comment.id %>"
+      >
+        <div class="flex items-start justify-between">
+          <div class="flex items-start space-x-3 flex-1">
+            <div class="flex-shrink-0">
+              <div
+                class="w-10 h-10 bg-primary bg-opacity-10 rounded-full flex items-center justify-center"
+              >
+                <i class="bi bi-person-fill text-primary"></i>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center space-x-2 mb-1">
+                <span class="font-semibold text-gray-900"
+                  ><%= comment.username %></span
+                >
+                <span class="text-xs text-gray-500">
+                  <%= new Date(comment.createdAt).toLocaleString('zh-CN') %>
+                </span>
+              </div>
+              <p class="text-gray-700 whitespace-pre-wrap break-words">
+                <%= comment.content %>
+              </p>
+            </div>
+          </div>
+          <% if (user && comment.userId === user.userId) { %>
+          <button
+            onclick="deleteComment('<%= comment.id %>')"
+            class="ml-3 text-red-500 hover:text-red-700 transition-colors flex-shrink-0"
+            title="删除评论"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+          <% } %>
+        </div>
+      </div>
+      <% }); %> <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 添加评论
+  document
+    .getElementById("commentForm")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const content = document.getElementById("commentContent").value.trim();
+      if (!content) {
+        alert("请输入评论内容");
+        return;
+      }
+
+      try {
+        const response = await fetch("/comments/<%= file.id %>", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          location.reload();
+        } else {
+          alert("评论失败: " + result.message);
+        }
+      } catch (error) {
+        alert("评论失败，请稍后重试");
+      }
+    });
+
+  // 删除评论
+  async function deleteComment(commentId) {
+    if (!confirm("确定要删除这条评论吗？")) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/comments/<%= file.id %>/" + commentId, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // 移除评论元素
+        const commentElement = document.querySelector(
+          `[data-comment-id="${commentId}"]`
+        );
+        if (commentElement) {
+          commentElement.remove();
+        }
+
+        // 如果没有评论了，刷新页面显示空状态
+        const commentsList = document.getElementById("commentsList");
+        if (commentsList.children.length === 0) {
+          location.reload();
+        }
+      } else {
+        alert("删除失败: " + result.message);
+      }
+    } catch (error) {
+      alert("删除失败，请稍后重试");
+    }
+  }
+</script>
+
+<%- include('../partials/footer') %>

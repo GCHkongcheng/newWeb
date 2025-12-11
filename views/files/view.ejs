@@ -1,48 +1,128 @@
 <%- include('../partials/header', { title: '查看文件', user: user }) %>
 
-<div class="card">
-  <div style="margin-bottom: 20px">
-    <a href="/files" class="btn btn-secondary">← 返回文件列表</a>
-  </div>
+<!-- Highlight.js 样式 -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
-  <h1><%= file.originalName %></h1>
-
-  <div
-    style="
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 5px;
-      margin: 20px 0;
-    "
-  >
-    <p><strong>文件信息：</strong></p>
-    <p>上传者: <%= uploader.username %></p>
-    <p>大小: <%= (file.size / 1024).toFixed(2) %> KB</p>
-    <p>上传时间: <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %></p>
-    <p>状态: <%= file.isPublic ? '公开' : '私有' %></p>
-    <% if (file.description) { %>
-    <p>描述: <%= file.description %></p>
-    <% } %>
-  </div>
-
-  <div style="margin-bottom: 10px">
-    <a href="/files/download/<%= file.id %>" class="btn btn-primary"
-      >下载文件</a
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Back Button -->
+  <div class="mb-6">
+    <a
+      href="/files"
+      class="inline-flex items-center space-x-2 text-primary hover:text-secondary transition-colors"
     >
+      <i class="bi bi-arrow-left"></i>
+      <span>返回文件列表</span>
+    </a>
   </div>
 
-  <h2 style="margin-top: 30px; margin-bottom: 15px">文件内容：</h2>
-  <pre
-    style="
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 5px;
-      overflow-x: auto;
-      border: 1px solid #ddd;
-      max-height: 600px;
-      overflow-y: auto;
-    "
-  ><code><%= content %></code></pre>
+  <!-- File Header -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+    <div class="p-6">
+      <div class="flex items-start justify-between flex-wrap gap-4 mb-6">
+        <div class="flex items-start space-x-4">
+          <div class="flex-shrink-0">
+            <div
+              class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center"
+            >
+              <i class="bi bi-file-earmark-code text-2xl text-primary"></i>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+              <%= file.originalName %>
+            </h1>
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <span
+                ><i class="bi bi-person mr-1"></i><%= uploader.username %></span
+              >
+              <span
+                ><i class="bi bi-calendar mr-1"></i><%= new
+                Date(file.uploadedAt).toLocaleString('zh-CN') %></span
+              >
+            </div>
+          </div>
+        </div>
+        <a
+          href="/files/download/<%= file.id %>"
+          class="px-6 py-3 bg-primary hover:bg-secondary text-white rounded-lg transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+        >
+          <i class="bi bi-download"></i>
+          <span>下载文件</span>
+        </a>
+      </div>
+
+      <!-- File Info Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="text-xs text-gray-500 mb-1">文件大小</div>
+          <div class="text-lg font-semibold text-gray-900">
+            <%= (file.size / 1024).toFixed(2) %> KB
+          </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="text-xs text-gray-500 mb-1">文件状态</div>
+          <div class="text-lg font-semibold">
+            <% if (file.isPublic) { %>
+            <span class="text-green-600"
+              ><i class="bi bi-globe mr-1"></i>公开</span
+            >
+            <% } else { %>
+            <span class="text-gray-600"
+              ><i class="bi bi-lock mr-1"></i>私有</span
+            >
+            <% } %>
+          </div>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="text-xs text-gray-500 mb-1">文件类型</div>
+          <div class="text-sm font-semibold text-gray-900">
+            <%= file.mimetype %>
+          </div>
+        </div>
+      </div>
+
+      <% if (file.description) { %>
+      <div class="mt-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+        <div class="text-xs text-blue-700 mb-1">文件描述</div>
+        <div class="text-sm text-gray-700"><%= file.description %></div>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Code Content -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden">
+    <div
+      class="bg-gray-50 px-6 py-3 border-b border-gray-200 flex items-center justify-between"
+    >
+      <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+        <i class="bi bi-code-square mr-2 text-primary"></i>
+        文件内容
+      </h2>
+      <span class="text-xs text-gray-500">支持语法高亮</span>
+    </div>
+    <div class="p-0">
+      <pre
+        class="!m-0 !rounded-none max-h-[600px] overflow-y-auto"
+      ><code id="codeContent" class="<%= getLanguageClass(file.originalName) %>"><%= content %></code></pre>
+    </div>
+  </div>
 </div>
 
-<%- include('../partials/footer') %>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    hljs.highlightAll();
+  });
+</script>
+
+<%- include('../partials/footer') %> <% function getLanguageClass(filename) {
+const ext = filename.split('.').pop().toLowerCase(); const langMap = { 'js':
+'language-javascript', 'py': 'language-python', 'cpp': 'language-cpp', 'c':
+'language-c', 'h': 'language-c', 'cs': 'language-csharp', 'java':
+'language-java', 'html': 'language-html', 'css': 'language-css', 'json':
+'language-json', 'xml': 'language-xml', 'md': 'language-markdown', 'txt':
+'language-plaintext' }; return langMap[ext] || 'language-plaintext'; } %>

@@ -32,6 +32,7 @@ const authRoutes = require("./routes/auth");
 const fileRoutes = require("./routes/files");
 const publicRoutes = require("./routes/public");
 const adminRoutes = require("./routes/admin");
+const commentRoutes = require("./routes/comments");
 
 // 首页重定向
 app.get("/", (req, res) => {
@@ -47,6 +48,7 @@ app.use("/auth", authRoutes);
 app.use("/files", fileRoutes);
 app.use("/public", publicRoutes);
 app.use("/admin", adminRoutes);
+app.use("/comments", commentRoutes);
 
 // 404 处理
 app.use((req, res) => {
@@ -74,17 +76,20 @@ async function start() {
     await initAdmin();
 
     const PORT = config.port;
-    app.listen(PORT, () => {
+    const HOST = config.host;
+    app.listen(PORT, HOST, () => {
       console.log("");
       console.log("=".repeat(50));
       console.log("🚀 个人网盘系统已启动！");
       console.log("=".repeat(50));
-      console.log(`📍 访问地址: http://localhost:${PORT}`);
+      console.log(`📍 本地访问: http://localhost:${PORT}`);
+      console.log(`📍 局域网访问: http://10.152.60.249:${PORT}`);
       console.log(`⏰ 启动时间: ${new Date().toLocaleString("zh-CN")}`);
       console.log("");
       console.log("📝 快速开始:");
-      console.log("   1. 打开浏览器访问 http://localhost:" + PORT);
-      console.log("   2. 使用管理员账号登录或注册新账号");
+      console.log("   1. 本地: http://localhost:" + PORT);
+      console.log("   2. 局域网: http://10.152.60.249:" + PORT);
+      console.log("   3. 使用管理员账号登录或注册新账号");
       console.log("");
       console.log("⚠️  提醒:");
       console.log("   - 首次启动会自动创建管理员账号");

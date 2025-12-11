@@ -1,73 +1,80 @@
 <%- include('../partials/header', { title: '管理后台', user: user }) %>
 
-<div class="card">
-  <h1>管理后台</h1>
-  <p style="color: #666; margin-bottom: 30px">
-    欢迎回来，管理员 <%= user.username %>
-  </p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Header -->
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 flex items-center mb-2">
+      <i class="bi bi-speedometer2 mr-3 text-primary"></i>
+      管理后台
+    </h1>
+    <p class="text-gray-600">欢迎回来，管理员 <%= user.username %></p>
+  </div>
 
-  <div
-    style="
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    "
-  >
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div
-      style="
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-      "
+      class="bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200"
     >
-      <h3 style="margin-bottom: 10px">👥 总用户数</h3>
-      <p style="font-size: 36px; font-weight: bold"><%= stats.totalUsers %></p>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">总用户数</h3>
+        <i class="bi bi-people text-3xl opacity-80"></i>
+      </div>
+      <p class="text-4xl font-bold"><%= stats.totalUsers %></p>
     </div>
 
     <div
-      style="
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-      "
+      class="bg-gradient-to-br from-pink-500 to-red-500 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200"
     >
-      <h3 style="margin-bottom: 10px">📁 总文件数</h3>
-      <p style="font-size: 36px; font-weight: bold"><%= stats.totalFiles %></p>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">总文件数</h3>
+        <i class="bi bi-file-earmark text-3xl opacity-80"></i>
+      </div>
+      <p class="text-4xl font-bold"><%= stats.totalFiles %></p>
     </div>
 
     <div
-      style="
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-      "
+      class="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200"
     >
-      <h3 style="margin-bottom: 10px">🌍 公开文件</h3>
-      <p style="font-size: 36px; font-weight: bold"><%= stats.publicFiles %></p>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">公开文件</h3>
+        <i class="bi bi-globe text-3xl opacity-80"></i>
+      </div>
+      <p class="text-4xl font-bold"><%= stats.publicFiles %></p>
     </div>
 
     <div
-      style="
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 10px;
-      "
+      class="bg-gradient-to-br from-green-500 to-teal-500 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200"
     >
-      <h3 style="margin-bottom: 10px">🔒 私有文件</h3>
-      <p style="font-size: 36px; font-weight: bold">
-        <%= stats.privateFiles %>
-      </p>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">私有文件</h3>
+        <i class="bi bi-lock text-3xl opacity-80"></i>
+      </div>
+      <p class="text-4xl font-bold"><%= stats.privateFiles %></p>
     </div>
   </div>
 
-  <div style="display: flex; gap: 15px">
-    <a href="/admin/users" class="btn btn-primary">用户管理</a>
-    <a href="/admin/files" class="btn btn-primary">文件管理</a>
+  <!-- Quick Actions -->
+  <div class="bg-white rounded-xl shadow-md p-6">
+    <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center">
+      <i class="bi bi-lightning mr-2 text-primary"></i>
+      快捷操作
+    </h2>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a
+        href="/admin/users"
+        class="flex-1 px-6 py-4 bg-gradient-to-r from-primary to-secondary text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+      >
+        <i class="bi bi-people"></i>
+        <span>用户管理</span>
+      </a>
+      <a
+        href="/admin/files"
+        class="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all duration-200 flex items-center justify-center space-x-2"
+      >
+        <i class="bi bi-file-earmark-text"></i>
+        <span>文件管理</span>
+      </a>
+    </div>
   </div>
 </div>
 

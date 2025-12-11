@@ -4,69 +4,176 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>用户注册 - 个人网盘系统</title>
-    <%- include('../partials/auth-layout-styles') %>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#667eea",
+              secondary: "#764ba2",
+            },
+          },
+        },
+      };
+    </script>
   </head>
-  <body>
-    <div class="container">
-      <h1>用户注册</h1>
-
-      <% if (error) { %>
-      <div class="alert alert-error"><%= error %></div>
-      <% } %> <% if (success) { %>
-      <div class="alert alert-success"><%= success %></div>
-      <% } %>
-
-      <form method="POST" action="/auth/register" id="registerForm">
-        <div class="form-group">
-          <label>用户名</label>
-          <input type="text" name="username" id="username" required />
+  <body
+    class="bg-gradient-to-br from-primary via-purple-500 to-secondary min-h-screen flex items-center justify-center p-4"
+  >
+    <div class="w-full max-w-md">
+      <!-- Logo -->
+      <div class="text-center mb-8">
+        <div
+          class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full shadow-lg mb-4"
+        >
+          <i class="bi bi-person-plus text-3xl text-primary"></i>
         </div>
+        <h1 class="text-3xl font-bold text-white mb-2">创建账号</h1>
+        <p class="text-purple-100">加入我们，开始云端存储之旅</p>
+      </div>
 
-        <div class="form-group">
-          <label>邮箱</label>
-          <input type="email" name="email" id="email" required />
-        </div>
-
-        <div class="form-group">
-          <label>验证码</label>
-          <div class="verification-group">
-            <input
-              type="text"
-              name="verificationCode"
-              id="verificationCode"
-              placeholder="请输入验证码"
-              required
-            />
-            <button type="button" id="sendCodeBtn">发送验证码</button>
+      <!-- Register Card -->
+      <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <% if (error) { %>
+        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+          <div class="flex items-center">
+            <i class="bi bi-exclamation-circle text-red-500 mr-2"></i>
+            <p class="text-red-700 text-sm"><%= error %></p>
           </div>
         </div>
-
-        <div class="form-group">
-          <label>密码（至少6位）</label>
-          <input
-            type="password"
-            name="password"
-            id="password"
-            required
-            minlength="6"
-          />
+        <% } %> <% if (success) { %>
+        <div
+          class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg"
+        >
+          <div class="flex items-center">
+            <i class="bi bi-check-circle text-green-500 mr-2"></i>
+            <p class="text-green-700 text-sm"><%= success %></p>
+          </div>
         </div>
+        <% } %>
 
-        <div class="form-group">
-          <label>确认密码</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            id="confirmPassword"
-            required
-            minlength="6"
-          />
+        <form
+          method="POST"
+          action="/auth/register"
+          id="registerForm"
+          class="space-y-4"
+        >
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <i class="bi bi-person mr-1"></i>用户名
+            </label>
+            <input
+              type="text"
+              name="username"
+              id="username"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="请输入用户名"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <i class="bi bi-envelope mr-1"></i>邮箱
+            </label>
+            <input
+              type="email"
+              name="email"
+              id="email"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="请输入邮箱"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <i class="bi bi-shield-check mr-1"></i>验证码
+            </label>
+            <div class="flex space-x-2">
+              <input
+                type="text"
+                name="verificationCode"
+                id="verificationCode"
+                placeholder="请输入验证码"
+                required
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+              <button
+                type="button"
+                id="sendCodeBtn"
+                class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all whitespace-nowrap font-medium"
+              >
+                发送验证码
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <i class="bi bi-lock mr-1"></i>密码（至少6位）
+            </label>
+            <input
+              type="password"
+              name="password"
+              id="password"
+              required
+              minlength="6"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="请输入密码"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              <i class="bi bi-lock-fill mr-1"></i>确认密码
+            </label>
+            <input
+              type="password"
+              name="confirmPassword"
+              id="confirmPassword"
+              required
+              minlength="6"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="请再次输入密码"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-gradient-to-r from-primary to-secondary text-white py-3 rounded-lg font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 mt-6"
+          >
+            <i class="bi bi-check-circle mr-2"></i>注册
+          </button>
+        </form>
+
+        <div class="mt-6 text-center">
+          <p class="text-gray-600 text-sm">
+            已有账号？
+            <a
+              href="/auth/login"
+              class="text-primary hover:text-secondary font-medium transition-colors"
+            >
+              立即登录
+            </a>
+          </p>
         </div>
+      </div>
 
-        <button type="submit" class="btn btn-primary">注册</button>
-      </form>
-
-      <div class="link">已有账号？ <a href="/auth/login">立即登录</a></div>
+      <!-- Back to Home -->
+      <div class="text-center mt-6">
+        <a
+          href="/"
+          class="text-white hover:text-purple-100 text-sm transition-colors"
+        >
+          <i class="bi bi-arrow-left mr-1"></i>返回首页
+        </a>
+      </div>
     </div>
 
     <script>
