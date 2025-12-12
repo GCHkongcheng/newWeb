@@ -1,0 +1,237 @@
+<%- include('../partials/header', { title: '关于我们', user: user }) %>
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Page Header -->
+  <div class="text-center mb-12">
+    <div class="flex items-center justify-center mb-4">
+      <i class="bi bi-cloud-arrow-up text-6xl text-primary"></i>
+    </div>
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">个人网盘系统</h1>
+    <p class="text-xl text-gray-600">安全、便捷、高效的云存储解决方案</p>
+  </div>
+
+  <!-- Features Section -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+    <!-- Feature Card 1 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-shield-check text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">安全可靠</h3>
+        <p class="text-gray-600">
+          采用 bcrypt 加密算法保护用户密码，支持邮箱验证码注册，确保账户安全
+        </p>
+      </div>
+    </div>
+
+    <!-- Feature Card 2 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-folder text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">文件管理</h3>
+        <p class="text-gray-600">
+          支持多种文件类型上传、在线预览、下载，智能识别文件编码
+        </p>
+      </div>
+    </div>
+
+    <!-- Feature Card 3 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-trash text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">回收站功能</h3>
+        <p class="text-gray-600">
+          删除的文件自动进入回收站，30天内可随时恢复，防止误删
+        </p>
+      </div>
+    </div>
+
+    <!-- Feature Card 4 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-search text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">文件搜索</h3>
+        <p class="text-gray-600">快速搜索定位文件，支持按文件名实时过滤查询</p>
+      </div>
+    </div>
+
+    <!-- Feature Card 5 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-code-square text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">代码高亮</h3>
+        <p class="text-gray-600">
+          支持多种编程语言的语法高亮显示，在线查看代码更便捷
+        </p>
+      </div>
+    </div>
+
+    <!-- Feature Card 6 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-globe text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">公共资源</h3>
+        <p class="text-gray-600">
+          支持文件公开分享，其他用户可查看、下载和评论公开文件
+        </p>
+      </div>
+    </div>
+
+    <!-- Feature Card 7 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-chat-dots text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">评论系统</h3>
+        <p class="text-gray-600">
+          对公共资源进行评论互动，管理员可管理所有评论
+        </p>
+      </div>
+    </div>
+
+    <!-- Feature Card 8 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-person-gear text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">用户中心</h3>
+        <p class="text-gray-600">自主修改用户名和密码，管理个人账户信息</p>
+      </div>
+    </div>
+
+    <!-- Feature Card 9 -->
+    <div
+      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+    >
+      <div class="p-6">
+        <div
+          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
+        >
+          <i class="bi bi-gear text-2xl text-primary"></i>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-2">后台管理</h3>
+        <p class="text-gray-600">
+          管理员可管理所有用户、文件，查看系统统计信息
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 想说的话 Section -->
+  <div class="bg-white rounded-xl shadow-md overflow-hidden mb-12">
+    <div class="bg-gradient-to-r from-primary to-secondary p-6">
+      <h2 class="text-2xl font-bold text-white flex items-center">
+        <i class="bi bi-heart mr-3"></i>
+        想说的话
+      </h2>
+    </div>
+    <div class="p-8">
+      <div class="text-gray-700 leading-relaxed space-y-4">
+        <p class="text-lg">
+          感谢您使用这个个人网盘系统！这是一个用心打造的云存储解决方案，希望能为您的文件管理带来便利。
+        </p>
+        <p>
+          在开发这个系统的过程中，我始终坚持用户体验至上的原则，力求让每一个功能都简单易用、安全可靠。
+          无论是文件的上传下载，还是公共资源的分享互动，都经过了精心设计和反复测试。
+        </p>
+        <p>
+          如果您在使用过程中有任何建议或遇到问题，欢迎随时与我联系。您的反馈是我持续改进的动力！
+        </p>
+        <p class="text-primary font-semibold mt-6">祝您使用愉快！ 🚀</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Section -->
+  <div
+    class="bg-gradient-to-r from-primary to-secondary rounded-xl shadow-md overflow-hidden p-8 text-center text-white"
+  >
+    <h2 class="text-2xl font-bold mb-4">联系我们</h2>
+    <p class="text-white text-opacity-90 mb-6">
+      如有任何问题或建议，欢迎通过以下方式联系我们
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+      <a
+        href="mailto:2839474636@qq.com"
+        class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all"
+        target="_blank"
+      >
+        <i class="bi bi-envelope"></i>
+        <span>2839474636@qq.com</span>
+      </a>
+      <a
+        href="https://github.com/gchkongcheng"
+        class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <i class="bi bi-github"></i>
+        <span>github.com/gchkongcheng</span>
+      </a>
+      <div
+        class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg"
+      >
+        <i class="bi bi-wechat"></i>
+        <span>微信公众号：GCH空城</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back Button -->
+  <div class="mt-8 text-center">
+    <a
+      href="/"
+      class="inline-flex items-center space-x-2 text-primary hover:text-secondary transition-colors"
+    >
+      <i class="bi bi-arrow-left"></i>
+      <span>返回首页</span>
+    </a>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

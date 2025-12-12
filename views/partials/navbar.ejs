@@ -14,7 +14,17 @@
 
       <!-- Desktop Menu -->
       <div class="hidden md:flex items-center space-x-1">
-        <% if (user) { %>
+        <% if (user) { %> <% if (user.isAdmin) { %>
+        <!-- 管理员只显示后台管理 -->
+        <a
+          href="/admin/dashboard"
+          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
+        >
+          <i class="bi bi-gear"></i>
+          <span>后台管理</span>
+        </a>
+        <% } else { %>
+        <!-- 普通用户显示完整菜单 -->
         <a
           href="/files"
           class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
@@ -36,22 +46,36 @@
           <i class="bi bi-globe"></i>
           <span>公共资源</span>
         </a>
-        <% if (user.isAdmin) { %>
-        <a
-          href="/admin/dashboard"
-          class="px-4 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all duration-200 flex items-center space-x-2"
-        >
-          <i class="bi bi-gear"></i>
-          <span>后台管理</span>
-        </a>
         <% } %>
         <div
           class="ml-4 flex items-center space-x-3 pl-4 border-l border-gray-300"
         >
+          <!-- 关于页面链接 -->
+          <a
+            href="/about"
+            class="text-gray-700 hover:text-primary transition-colors flex items-center space-x-2"
+            title="关于"
+          >
+            <i class="bi bi-info-circle text-xl"></i>
+            <span class="font-medium">关于</span>
+          </a>
+          <% if (user.isAdmin) { %>
+          <!-- 管理员显示不可点击的用户名 -->
           <span class="text-gray-700 flex items-center space-x-2">
             <i class="bi bi-person-circle text-xl"></i>
             <span class="font-medium"><%= user.username %></span>
           </span>
+          <% } else { %>
+          <!-- 普通用户显示可点击的用户名 -->
+          <a
+            href="/profile"
+            class="text-gray-700 hover:text-primary flex items-center space-x-2 transition-colors"
+            title="用户中心"
+          >
+            <i class="bi bi-person-circle text-xl"></i>
+            <span class="font-medium"><%= user.username %></span>
+          </a>
+          <% } %>
           <a
             href="/auth/logout"
             class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center space-x-1"
@@ -94,7 +118,16 @@
     class="hidden md:hidden bg-white border-t border-gray-200"
   >
     <div class="px-2 pt-2 pb-3 space-y-1">
-      <% if (user) { %>
+      <% if (user) { %> <% if (user.isAdmin) { %>
+      <!-- 管理员只显示后台管理 -->
+      <a
+        href="/admin/dashboard"
+        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
+      >
+        <i class="bi bi-gear mr-2"></i>后台管理
+      </a>
+      <% } else { %>
+      <!-- 普通用户显示完整菜单 -->
       <a
         href="/files"
         class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
@@ -113,18 +146,29 @@
       >
         <i class="bi bi-globe mr-2"></i>公共资源
       </a>
-      <% if (user.isAdmin) { %>
-      <a
-        href="/admin/dashboard"
-        class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all"
-      >
-        <i class="bi bi-gear mr-2"></i>后台管理
-      </a>
       <% } %>
       <div class="pt-2 border-t border-gray-200">
+        <!-- 关于页面链接 -->
+        <a
+          href="/about"
+          class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-primary hover:text-white transition-all mb-2"
+        >
+          <i class="bi bi-info-circle mr-2"></i>关于
+        </a>
+        <% if (user.isAdmin) { %>
+        <!-- 管理员显示不可点击的用户名 -->
         <div class="px-3 py-2 text-gray-700">
           <i class="bi bi-person-circle mr-2"></i><%= user.username %>
         </div>
+        <% } else { %>
+        <!-- 普通用户显示可点击的用户名 -->
+        <a
+          href="/profile"
+          class="block px-3 py-2 text-gray-700 hover:bg-primary hover:text-white transition-all rounded-lg mx-2 mb-2"
+        >
+          <i class="bi bi-person-circle mr-2"></i><%= user.username %>
+        </a>
+        <% } %>
         <a
           href="/auth/logout"
           class="block px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors mx-2"

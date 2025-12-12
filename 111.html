@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>光影战棋 v2.0 - 激光觉醒</title>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --panel-bg: #1e1e1e;
+        --board-border: #444;
+        --cell-base: #2a2a2a;
+        --cell-lit: #3a3a3a; /* 稍微亮一点的背景 */
+        --red-team: #ff5252;
+        --blue-team: #448aff;
+        --beam-color: rgba(255, 235, 59, 0.8);
+        --beam-glow: 0 0 8px rgba(255, 235, 59, 0.6);
+      }
+
+      body {
+        font-family: "Segoe UI", Roboto, sans-serif;
+        background-color: var(--bg-color);
+        color: #eee;
+        display: flex;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      /* 布局容器 */
+      .container {
+        display: flex;
+        width: 100%;
+        height: 100%;
+      }
+
+      /* 左侧游戏区 */
+      .game-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+
+      /* 右侧信息面板 */
+      .sidebar {
+        width: 300px;
+        background-color: var(--panel-bg);
+        padding: 20px;
+        border-left: 1px solid #333;
+        display: flex;
+        flex-direction: column;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+      }
+
+      h1 {
+        margin: 0 0 20px 0;
+        font-size: 22px;
+        color: #fff;
+        letter-spacing: 1px;
+      }
+
+      .status-card {
+        background: #333;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+
+      .turn-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .piece-info h3 {
+        margin: 0 0 5px 0;
+      }
+      .piece-info p {
+        margin: 5px 0;
+        font-size: 14px;
+        color: #aaa;
+      }
+      .buff-tag {
+        display: inline-block;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-top: 5px;
+      }
+      .buff-good {
+        background: rgba(76, 175, 80, 0.2);
+        color: #81c784;
+        border: 1px solid #81c784;
+      }
+      .buff-bad {
+        background: rgba(244, 67, 54, 0.2);
+        color: #e57373;
+        border: 1px solid #e57373;
+      }
+
+      /* 棋盘层叠结构 */
+      .board-wrapper {
+        position: relative;
+        width: 540px; /* 9 * 60 */
+        height: 540px;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(9, 60px);
+        grid-template-rows: repeat(9, 60px);
+        gap: 0;
+        background-color: var(--board-border);
+        border: 2px solid var(--board-border);
+      }
+
+      .cell {
+        width: 60px;
+        height: 60px;
+        background-color: var(--cell-base);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 32px;
+        cursor: pointer;
+        position: relative;
+        border: 1px solid #333;
+        transition: background-color 0.2s;
+        z-index: 2; /* 在光线之下，但在背景之上? 不，光线需要在最上层 */
+      }
+
+      /* 棋盘格样式 */
+      .cell:nth-child(odd) {
+        background-color: #2e2e2e;
+      }
+      .cell:nth-child(even) {
+        background-color: #2a2a2a;
+      }
+      .cell.lit {
+        background-color: #353530 !important;
+      } /* 极淡的黄色背景提示 */
+
+      /* 激光层 (SVG) */
+      .beam-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* 让点击穿透 */
+        z-index: 5;
+      }
+
+      /* 棋子层 */
+      .piece {
+        z-index: 10;
+        transition: transform 0.2s ease-out;
+        user-select: none;
+      }
+      .piece.red {
+        color: var(--red-team);
+        filter: drop-shadow(0 0 2px black);
+      }
+      .piece.blue {
+        color: var(--blue-team);
+        filter: drop-shadow(0 0 2px black);
+      }
+
+      /* 选中状态 */
+      .cell.selected {
+        box-shadow: inset 0 0 0 3px #fff;
+      }
+      .cell.valid-move::after {
+        content: "";
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background-color: rgba(0, 255, 0, 0.6);
+        border-radius: 50%;
+        z-index: 20;
+        animation: pulse 1.5s infinite;
+      }
+      .cell.valid-attack::after {
+        background-color: rgba(255, 0, 0, 0.6);
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.8;
+        }
+        50% {
+          transform: scale(1.3);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.8;
+        }
+      }
+
+      /* 按钮 */
+      button {
+        background: #333;
+        color: white;
+        border: 1px solid #555;
+        padding: 8px 16px;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-top: auto;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="game-area">
+        <div class="board-wrapper">
+          <div class="board" id="board"></div>
+          <svg class="beam-layer" id="beam-layer"></svg>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <h1>光影战棋 v2.0</h1>
+
+        <div class="status-card">
+          <div
+            id="turn-badge"
+            class="turn-badge"
+            style="background: var(--red-team)"
+          >
+            红方回合
+          </div>
+          <div style="font-size: 13px; color: #888">击杀对方核心(☀️)获胜</div>
+        </div>
+
+        <div
+          class="status-card"
+          id="selection-panel"
+          style="display: none; border-left: 4px solid #fff"
+        >
+          <div class="piece-info">
+            <h3 id="sel-name">棋子名称</h3>
+            <p id="sel-desc">棋子描述...</p>
+            <div id="sel-buff" class="buff-tag">状态</div>
+          </div>
+        </div>
+
+        <div style="flex: 1"></div>
+        <button onclick="initGame()">重新开始游戏</button>
+      </div>
+    </div>
+
+    <script>
+      // --- 游戏常量 ---
+      const BOARD_SIZE = 9;
+      const CELL_SIZE = 60; // used for SVG coords
+      const TYPES = {
+        SOURCE: "source", // ☀️ 核心
+        PRISM: "prism", // 💎 棱镜
+        SHADOW: "shadow", // 🥷 影行者
+        GUARD: "guard", // 🛡️ 光卫
+        VOID: "void", // ⬛ 虚空墙
+      };
+
+      const PIECE_CONFIG = {
+        [TYPES.SOURCE]: {
+          icon: "☀️",
+          name: "光源核心",
+          desc: "你的生命。向四周发射光线。移动：1格(王)。",
+        },
+        [TYPES.PRISM]: {
+          icon: "💎",
+          name: "折光棱镜",
+          desc: "中继站。光线穿透并向两侧折射。移动：直线(车)。",
+        },
+        [TYPES.SHADOW]: {
+          icon: "🥷",
+          name: "影行者",
+          desc: "刺客。暗处：跳跃(马)且无敌；亮处：走1格(兵)且脆弱。",
+        },
+        [TYPES.GUARD]: {
+          icon: "🛡️",
+          name: "光卫",
+          desc: "战士。亮处：冲锋(车)且护甲；暗处：走1格。",
+        },
+        [TYPES.VOID]: {
+          icon: "⬛",
+          name: "虚空墙",
+          desc: "坦克。吞噬一切光线。移动：1格。",
+        },
+      };
+
+      let board = [];
+      let lightMap = [];
+      let turn = "red";
+      let selectedPiece = null;
+
+      // --- 初始化 ---
+      function initGame() {
+        turn = "red";
+        selectedPiece = null;
+        createBoardData();
+        updateGameState(); // 计算光照 + 渲染
+      }
+
+      function createBoardData() {
+        board = Array(BOARD_SIZE)
+          .fill(null)
+          .map(() => Array(BOARD_SIZE).fill(null));
+        const place = (r, c, type, owner) => {
+          board[r][c] = { type, owner, r, c, id: Math.random() };
+        };
+
+        // 蓝方 (上)
+        place(0, 4, TYPES.SOURCE, "blue");
+        place(1, 3, TYPES.PRISM, "blue");
+        place(1, 5, TYPES.PRISM, "blue");
+        place(1, 4, TYPES.VOID, "blue");
+        place(2, 2, TYPES.GUARD, "blue");
+        place(2, 6, TYPES.GUARD, "blue");
+        place(1, 1, TYPES.GUARD, "blue");
+        place(2, 3, TYPES.SHADOW, "blue");
+        place(2, 5, TYPES.SHADOW, "blue");
+        place(2, 4, TYPES.SHADOW, "blue");
+
+        // 红方 (下)
+        place(8, 4, TYPES.SOURCE, "red");
+        place(7, 3, TYPES.PRISM, "red");
+        place(7, 5, TYPES.PRISM, "red");
+        place(7, 4, TYPES.VOID, "red");
+        place(6, 2, TYPES.GUARD, "red");
+        place(6, 6, TYPES.GUARD, "red");
+        place(7, 7, TYPES.GUARD, "red");
+        place(6, 3, TYPES.SHADOW, "red");
+        place(6, 5, TYPES.SHADOW, "red");
+        place(6, 4, TYPES.SHADOW, "red");
+      }
+
+      // --- 核心逻辑：光照计算 + SVG绘制数据生成 ---
+      function updateGameState() {
+        calculateLight();
+        renderBoard();
+        renderBeams();
+        updateUI();
+      }
+
+      // 存储光束线段用于绘制
+      let beamSegments = [];
+
+      function calculateLight() {
+        lightMap = Array(BOARD_SIZE)
+          .fill(false)
+          .map(() => Array(BOARD_SIZE).fill(false));
+        beamSegments = [];
+
+        let sources = [];
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            if (board[r][c] && board[r][c].type === TYPES.SOURCE) {
+              sources.push({ r, c });
+            }
+          }
+        }
+
+        const dr = [-1, 0, 1, 0]; // 上 右 下 左
+        const dc = [0, 1, 0, -1];
+
+        let beams = [];
+        sources.forEach((src) => {
+          lightMap[src.r][src.c] = true;
+          for (let i = 0; i < 4; i++)
+            beams.push({ r: src.r, c: src.c, dir: i, depth: 0 });
+        });
+
+        let processed = new Set(); // 防止无限循环
+
+        while (beams.length > 0) {
+          let b = beams.shift();
+
+          // 唯一键检查，防止同一位置同一方向重复处理
+          let key = `${b.r},${b.c},${b.dir}`;
+          if (processed.has(key) || b.depth > 20) continue;
+          processed.add(key);
+
+          let nr = b.r + dr[b.dir];
+          let nc = b.c + dc[b.dir];
+
+          // 记录线段起点和终点 (用于SVG)
+          // 起点是当前格中心，终点是下一格中心
+          // 如果出界，终点是边缘
+
+          if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE) {
+            // 射向边缘
+            continue;
+          }
+
+          // 记录光束线段 (视觉)
+          beamSegments.push({ r1: b.r, c1: b.c, r2: nr, c2: nc });
+
+          lightMap[nr][nc] = true;
+          let piece = board[nr][nc];
+
+          if (!piece) {
+            beams.push({ r: nr, c: nc, dir: b.dir, depth: b.depth });
+          } else {
+            if (piece.type === TYPES.PRISM) {
+              beams.push({ r: nr, c: nc, dir: b.dir, depth: b.depth + 1 }); // 直射
+              beams.push({
+                r: nr,
+                c: nc,
+                dir: (b.dir + 1) % 4,
+                depth: b.depth + 1,
+              }); // 右转
+              beams.push({
+                r: nr,
+                c: nc,
+                dir: (b.dir + 3) % 4,
+                depth: b.depth + 1,
+              }); // 左转
+            } else if (piece.type === TYPES.VOID) {
+              // 吸收
+            } else {
+              // 阻挡 (Source, Guard, Shadow)
+            }
+          }
+        }
+      }
+
+      // --- 移动逻辑 ---
+      function getValidMoves(piece) {
+        let moves = [];
+        let r = piece.r,
+          c = piece.c;
+        let isLit = lightMap[r][c];
+
+        const addMove = (tr, tc) => {
+          if (tr >= 0 && tr < BOARD_SIZE && tc >= 0 && tc < BOARD_SIZE) {
+            let target = board[tr][tc];
+            // 不能吃自己的，除非特殊技能(暂无)
+            if (!target || target.owner !== piece.owner) {
+              moves.push({ r: tr, c: tc, isAttack: !!target });
+            }
+          }
+        };
+
+        const slide = (dirs) => {
+          dirs.forEach((d) => {
+            for (let i = 1; i < BOARD_SIZE; i++) {
+              let nr = r + d[0] * i;
+              let nc = c + d[1] * i;
+              if (nr < 0 || nr >= BOARD_SIZE || nc < 0 || nc >= BOARD_SIZE)
+                break;
+              let target = board[nr][nc];
+              if (!target) {
+                moves.push({ r: nr, c: nc });
+              } else {
+                if (target.owner !== piece.owner)
+                  moves.push({ r: nr, c: nc, isAttack: true });
+                break;
+              }
+            }
+          });
+        };
+
+        const dirsCross = [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+        ];
+        const dirsKing = [
+          [-1, -1],
+          [-1, 0],
+          [-1, 1],
+          [0, -1],
+          [0, 1],
+          [1, -1],
+          [1, 0],
+          [1, 1],
+        ];
+        const dirsKnight = [
+          [-2, -1],
+          [-2, 1],
+          [-1, -2],
+          [-1, 2],
+          [1, -2],
+          [1, 2],
+          [2, -1],
+          [2, 1],
+        ];
+
+        switch (piece.type) {
+          case TYPES.SOURCE:
+            // v2.0 优化：核心可以像王一样移动，防止被死锁
+            dirsKing.forEach((d) => addMove(r + d[0], c + d[1]));
+            break;
+          case TYPES.VOID:
+            dirsKing.forEach((d) => addMove(r + d[0], c + d[1]));
+            break;
+          case TYPES.PRISM:
+            slide(dirsCross);
+            break;
+          case TYPES.GUARD:
+            if (isLit) slide(dirsCross);
+            else dirsKing.forEach((d) => addMove(r + d[0], c + d[1]));
+            break;
+          case TYPES.SHADOW:
+            if (!isLit) dirsKnight.forEach((d) => addMove(r + d[0], c + d[1]));
+            else {
+              // 亮处只能走1格，且不能攻击(这里简化为能移动但极弱)
+              dirsCross.forEach((d) => addMove(r + d[0], c + d[1]));
+            }
+            break;
+        }
+        return moves;
+      }
+
+      // --- 交互 ---
+      function handleClick(r, c) {
+        let clickedPiece = board[r][c];
+        const cell = document.querySelector(
+          `.cell[data-r="${r}"][data-c="${c}"]`
+        );
+
+        // 尝试移动
+        if (selectedPiece && cell.classList.contains("valid-move")) {
+          executeMove(selectedPiece, r, c);
+          return;
+        }
+
+        // 选择棋子
+        if (clickedPiece && clickedPiece.owner === turn) {
+          selectedPiece = clickedPiece;
+          updateGameState(); // 刷新高亮
+          showSelectionInfo(clickedPiece);
+        } else {
+          selectedPiece = null;
+          updateGameState();
+          document.getElementById("selection-panel").style.display = "none";
+        }
+      }
+
+      function executeMove(piece, tr, tc) {
+        let target = board[tr][tc];
+        if (target && target.type === TYPES.SOURCE) {
+          alert((turn === "red" ? "红方" : "蓝方") + " 获胜！");
+          initGame();
+          return;
+        }
+
+        board[piece.r][piece.c] = null;
+        piece.r = tr;
+        piece.c = tc;
+        board[tr][tc] = piece;
+
+        selectedPiece = null;
+        turn = turn === "red" ? "blue" : "red";
+        updateGameState();
+      }
+
+      // --- 渲染系统 ---
+      function renderBoard() {
+        const boardEl = document.getElementById("board");
+        boardEl.innerHTML = "";
+
+        let validMoves = selectedPiece ? getValidMoves(selectedPiece) : [];
+        let validMap = new Set(validMoves.map((m) => `${m.r},${m.c}`));
+
+        for (let r = 0; r < BOARD_SIZE; r++) {
+          for (let c = 0; c < BOARD_SIZE; c++) {
+            let cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.r = r;
+            cell.dataset.c = c;
+
+            // 地形提示
+            if (lightMap[r][c]) cell.classList.add("lit");
+
+            // 棋子
+            let piece = board[r][c];
+            if (piece) {
+              let pDiv = document.createElement("div");
+              pDiv.className = `piece ${piece.owner}`;
+              pDiv.innerText = PIECE_CONFIG[piece.type].icon;
+              cell.appendChild(pDiv);
+              if (selectedPiece === piece) cell.classList.add("selected");
+            }
+
+            // 移动提示
+            if (validMap.has(`${r},${c}`)) {
+              cell.classList.add("valid-move");
+              if (piece) cell.classList.add("valid-attack"); // 红色提示
+            }
+
+            cell.onclick = () => handleClick(r, c);
+            boardEl.appendChild(cell);
+          }
+        }
+      }
+
+      function renderBeams() {
+        const svg = document.getElementById("beam-layer");
+        svg.innerHTML = ""; // Clear
+
+        // 绘制光束
+        beamSegments.forEach((seg) => {
+          let line = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line"
+          );
+          // 计算中心点坐标
+          let x1 = seg.c1 * CELL_SIZE + CELL_SIZE / 2;
+          let y1 = seg.r1 * CELL_SIZE + CELL_SIZE / 2;
+          let x2 = seg.c2 * CELL_SIZE + CELL_SIZE / 2;
+          let y2 = seg.r2 * CELL_SIZE + CELL_SIZE / 2;
+
+          line.setAttribute("x1", x1);
+          line.setAttribute("y1", y1);
+          line.setAttribute("x2", x2);
+          line.setAttribute("y2", y2);
+          line.setAttribute("stroke", "var(--beam-color)");
+          line.setAttribute("stroke-width", "4");
+          line.setAttribute("stroke-linecap", "round");
+          line.style.filter = "drop-shadow(var(--beam-glow))";
+
+          svg.appendChild(line);
+        });
+
+        // 在光源处绘制一个发光点
+        board.flat().forEach((p) => {
+          if (p && p.type === TYPES.SOURCE) {
+            let circle = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "circle"
+            );
+            circle.setAttribute("cx", p.c * CELL_SIZE + CELL_SIZE / 2);
+            circle.setAttribute("cy", p.r * CELL_SIZE + CELL_SIZE / 2);
+            circle.setAttribute("r", "10");
+            circle.setAttribute("fill", "white");
+            circle.style.filter = "drop-shadow(0 0 10px yellow)";
+            svg.appendChild(circle);
+          }
+        });
+      }
+
+      function updateUI() {
+        // 更新回合提示
+        const badge = document.getElementById("turn-badge");
+        badge.innerText = turn === "red" ? "🔴 红方回合" : "🔵 蓝方回合";
+        badge.style.background =
+          turn === "red" ? "rgba(255, 82, 82, 0.2)" : "rgba(68, 138, 255, 0.2)";
+        badge.style.color = turn === "red" ? "#ff5252" : "#448aff";
+        badge.style.border = `1px solid ${
+          turn === "red" ? "#ff5252" : "#448aff"
+        }`;
+      }
+
+      function showSelectionInfo(piece) {
+        const panel = document.getElementById("selection-panel");
+        const name = document.getElementById("sel-name");
+        const desc = document.getElementById("sel-desc");
+        const buff = document.getElementById("sel-buff");
+        const info = PIECE_CONFIG[piece.type];
+
+        panel.style.display = "block";
+        panel.style.borderColor =
+          piece.owner === "red" ? "var(--red-team)" : "var(--blue-team)";
+        name.innerText = info.icon + " " + info.name;
+        desc.innerText = info.desc;
+
+        let isLit = lightMap[piece.r][piece.c];
+
+        // 动态状态描述
+        if (piece.type === TYPES.GUARD) {
+          buff.className = isLit ? "buff-tag buff-good" : "buff-tag buff-bad";
+          buff.innerText = isLit
+            ? "充能中：像车一样冲锋"
+            : "充能丢失：只能走1格";
+        } else if (piece.type === TYPES.SHADOW) {
+          buff.className = !isLit ? "buff-tag buff-good" : "buff-tag buff-bad";
+          buff.innerText = !isLit ? "潜行中：像马跳跃" : "暴露：极度脆弱";
+        } else if (piece.type === TYPES.SOURCE) {
+          buff.className = "buff-tag buff-good";
+          buff.innerText = "能量源：生成光线";
+        } else {
+          buff.style.display = "none";
+        }
+        if (piece.type !== TYPES.PRISM && piece.type !== TYPES.VOID)
+          buff.style.display = "inline-block";
+      }
+
+      // Start
+      initGame();
+    </script>
+  </body>
+</html>

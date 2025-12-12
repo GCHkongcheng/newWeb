@@ -33,6 +33,8 @@ const fileRoutes = require("./routes/files");
 const publicRoutes = require("./routes/public");
 const adminRoutes = require("./routes/admin");
 const commentRoutes = require("./routes/comments");
+const profileRoutes = require("./routes/profile");
+const aboutRoutes = require("./routes/about");
 
 // 首页重定向
 app.get("/", (req, res) => {
@@ -49,6 +51,8 @@ app.use("/files", fileRoutes);
 app.use("/public", publicRoutes);
 app.use("/admin", adminRoutes);
 app.use("/comments", commentRoutes);
+app.use("/profile", profileRoutes);
+app.use("/about", aboutRoutes);
 
 // 404 处理
 app.use((req, res) => {

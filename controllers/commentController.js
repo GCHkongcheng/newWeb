@@ -10,7 +10,12 @@ exports.showComments = async (req, res) => {
       return res.status(404).render("error", {
         message: "文件不存在",
         error: { status: 404 },
-        user: req.session.userId ? { username: req.session.username } : null,
+        user: req.session.userId
+          ? {
+              username: req.session.username,
+              isAdmin: req.session.isAdmin || false,
+            }
+          : null,
       });
     }
 
@@ -19,7 +24,12 @@ exports.showComments = async (req, res) => {
       return res.status(403).render("error", {
         message: "只能对公共文件进行评论",
         error: { status: 403 },
-        user: req.session.userId ? { username: req.session.username } : null,
+        user: req.session.userId
+          ? {
+              username: req.session.username,
+              isAdmin: req.session.isAdmin || false,
+            }
+          : null,
       });
     }
 
@@ -31,7 +41,11 @@ exports.showComments = async (req, res) => {
 
     res.render("comments/index", {
       user: req.session.userId
-        ? { username: req.session.username, userId: req.session.userId }
+        ? {
+            username: req.session.username,
+            userId: req.session.userId,
+            isAdmin: req.session.isAdmin || false,
+          }
         : null,
       file,
       uploader,
@@ -42,7 +56,12 @@ exports.showComments = async (req, res) => {
     res.status(500).render("error", {
       message: "加载评论失败",
       error: error,
-      user: req.session.userId ? { username: req.session.username } : null,
+      user: req.session.userId
+        ? {
+            username: req.session.username,
+            isAdmin: req.session.isAdmin || false,
+          }
+        : null,
     });
   }
 };
@@ -87,8 +106,9 @@ exports.deleteComment = async (req, res) => {
   try {
     const commentId = req.params.commentId;
     const userId = req.session.userId;
+    const isAdmin = req.session.isAdmin || false;
 
-    const deleted = CommentModel.delete(commentId, userId);
+    const deleted = CommentModel.delete(commentId, userId, isAdmin);
 
     if (deleted) {
       res.json({ success: true, message: "评论已删除" });

@@ -418,10 +418,14 @@ const CommentModel = {
   },
 
   // 删除评论
-  delete(commentId, userId) {
+  delete(commentId, userId, isAdmin = false) {
     const comments = readData(COMMENTS_FILE);
     const comment = comments.find((c) => c.id === commentId);
-    if (!comment || comment.userId !== userId) {
+    if (!comment) {
+      return false;
+    }
+    // 管理员可以删除任何评论，普通用户只能删除自己的评论
+    if (!isAdmin && comment.userId !== userId) {
       return false;
     }
     const filtered = comments.filter((c) => c.id !== commentId);
