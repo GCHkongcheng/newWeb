@@ -1,4 +1,4 @@
-const { FileModel, UserModel, TrashModel } = require("../models/dataStore");
+const { FileModel, UserModel, CategoryModel } = require("../models/dataStore");
 const fs = require("fs");
 const path = require("path");
 const iconv = require("iconv-lite");
@@ -9,10 +9,20 @@ exports.showFiles = async (req, res) => {
   try {
     const userId = req.session.userId;
     const files = FileModel.findByUserId(userId);
+    const categories = CategoryModel.findAll();
+
+    // 计算存储空间
+    const usedStorage = FileModel.getUserStorageUsed(userId);
+    const maxStorage = 500 * 1024 * 1024; // 500MB
+    const storagePercent = ((usedStorage / maxStorage) * 100).toFixed(1);
 
     res.render("files/index", {
       user: { username: req.session.username },
       files: files,
+      categories: categories,
+      usedStorage: usedStorage,
+      maxStorage: maxStorage,
+      storagePercent: storagePercent,
       error: null,
       success: null,
     });
@@ -36,6 +46,27 @@ exports.uploadFile = async (req, res) => {
     const userId = req.session.userId;
     const isPublic = req.body.isPublic === "true";
     const description = req.body.description || "";
+    const category = req.body.category || "other";
+
+    // 检查用户存储空间
+    const maxStorage = 500 * 1024 * 1024; // 500MB
+    const usedStorage = FileModel.getUserStorageUsed(userId);
+    const fileSize = req.file.size;
+
+    if (usedStorage + fileSize > maxStorage) {
+      // 删除已上传的文件
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: `存储空间不足！当前已使用 ${(
+          usedStorage /
+          1024 /
+          1024
+        ).toFixed(2)}MB，该文件大小 ${(fileSize / 1024 / 1024).toFixed(
+          2
+        )}MB，总容量 500MB`,
+      });
+    }
 
     // 创建文件记录
     const fileRecord = FileModel.create({
@@ -47,6 +78,7 @@ exports.uploadFile = async (req, res) => {
       mimetype: req.file.mimetype,
       isPublic: isPublic,
       description: description,
+      category: category,
     });
 
     res.json({
@@ -90,38 +122,53 @@ exports.viewFile = async (req, res) => {
       });
     }
 
-    // 读取文件内容并自动检测编码
-    let content;
-    try {
-      const buffer = fs.readFileSync(file.path);
+    // 检查是否为图片文件
+    const ext = path.extname(file.originalName).toLowerCase();
+    const imageExts = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".bmp",
+      ".webp",
+      ".svg",
+    ];
+    const isImage = imageExts.includes(ext);
 
-      // 检测文件编码
-      const detected = jschardet.detect(buffer);
-      const encoding = detected.encoding;
+    // 读取文件内容并自动检测编码（仅对非图片文件）
+    let content = "";
+    if (!isImage) {
+      try {
+        const buffer = fs.readFileSync(file.path);
 
-      // 根据检测到的编码读取文件
-      if (
-        encoding &&
-        encoding.toLowerCase() !== "utf-8" &&
-        encoding.toLowerCase() !== "ascii"
-      ) {
-        // 如果是 GBK、GB2312 等编码，转换为 UTF-8
-        if (iconv.encodingExists(encoding)) {
-          content = iconv.decode(buffer, encoding);
-        } else {
-          // 尝试常见的中文编码
-          try {
-            content = iconv.decode(buffer, "gbk");
-          } catch (e) {
-            content = buffer.toString("utf8");
+        // 检测文件编码
+        const detected = jschardet.detect(buffer);
+        const encoding = detected.encoding;
+
+        // 根据检测到的编码读取文件
+        if (
+          encoding &&
+          encoding.toLowerCase() !== "utf-8" &&
+          encoding.toLowerCase() !== "ascii"
+        ) {
+          // 如果是 GBK、GB2312 等编码，转换为 UTF-8
+          if (iconv.encodingExists(encoding)) {
+            content = iconv.decode(buffer, encoding);
+          } else {
+            // 尝试常见的中文编码
+            try {
+              content = iconv.decode(buffer, "gbk");
+            } catch (e) {
+              content = buffer.toString("utf8");
+            }
           }
+        } else {
+          content = buffer.toString("utf8");
         }
-      } else {
-        content = buffer.toString("utf8");
+      } catch (error) {
+        console.error("读取文件编码错误:", error);
+        content = fs.readFileSync(file.path, "utf8");
       }
-    } catch (error) {
-      console.error("读取文件编码错误:", error);
-      content = fs.readFileSync(file.path, "utf8");
     }
 
     // 获取上传者信息
@@ -169,7 +216,7 @@ exports.downloadFile = async (req, res) => {
   }
 };
 
-// 删除文件（移到回收站）
+// 删除文件（直接删除）
 exports.deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;
@@ -184,121 +231,62 @@ exports.deleteFile = async (req, res) => {
       return res.json({ success: false, message: "无权删除此文件" });
     }
 
-    // 从文件列表中删除
-    const files = FileModel.findAll();
-    const filteredFiles = files.filter((f) => f.id !== fileId);
+    // 删除物理文件
     const fs = require("fs");
-    fs.writeFileSync(
-      require("path").join(__dirname, "..", "data", "files.json"),
-      JSON.stringify(filteredFiles, null, 2)
-    );
+    if (fs.existsSync(file.path)) {
+      fs.unlinkSync(file.path);
+    }
 
-    // 添加到回收站
-    TrashModel.add(file);
+    // 从数据库中删除文件记录
+    FileModel.delete(fileId);
 
-    res.json({ success: true, message: "文件已移至回收站" });
+    res.json({ success: true, message: "文件已删除" });
   } catch (error) {
     console.error("删除文件错误:", error);
     res.json({ success: false, message: "删除失败: " + error.message });
   }
 };
 
-// 显示回收站
-exports.showTrash = async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const trashFiles = TrashModel.findByUserId(userId);
-
-    res.render("files/trash", {
-      user: { username: req.session.username },
-      files: trashFiles,
-    });
-  } catch (error) {
-    console.error("获取回收站错误:", error);
-    res.render("error", {
-      message: "获取回收站失败",
-      error: error,
-      user: { username: req.session.username },
-    });
-  }
+// 创建分类
+exports.createCategory = async (req, res) => {
+  res.status(404).json({ success: false, message: "功能已禁用" });
 };
 
-// 从回收站恢复
-exports.restoreFile = async (req, res) => {
+// 更新分类
+exports.updateCategory = async (req, res) => {
+  res.status(404).json({ success: false, message: "功能已禁用" });
+};
+
+// 删除分类
+exports.deleteCategory = async (req, res) => {
+  res.status(404).json({ success: false, message: "功能已禁用" });
+};
+
+// 更新文件分类
+exports.updateFileCategory = async (req, res) => {
   try {
-    const fileId = req.params.id;
-    const file = TrashModel.findById(fileId);
+    const userId = req.session.userId;
+    const { fileId, category } = req.body;
+
+    const file = FileModel.findById(fileId);
 
     if (!file) {
       return res.json({ success: false, message: "文件不存在" });
     }
 
-    // 检查权限
-    if (file.userId !== req.session.userId && !req.session.isAdmin) {
-      return res.json({ success: false, message: "无权恢复此文件" });
+    if (file.userId !== userId && !req.session.isAdmin) {
+      return res.json({ success: false, message: "无权修改此文件" });
     }
 
-    // 从回收站恢复
-    const restoredFile = TrashModel.restore(fileId);
+    const updated = FileModel.update(fileId, { category });
 
-    if (restoredFile) {
-      // 添加回文件列表
-      const files = FileModel.findAll();
-      const { deletedAt, expireAt, ...fileData } = restoredFile;
-      files.push(fileData);
-      const fs = require("fs");
-      fs.writeFileSync(
-        require("path").join(__dirname, "..", "data", "files.json"),
-        JSON.stringify(files, null, 2)
-      );
-
-      res.json({ success: true, message: "文件已恢复" });
+    if (updated) {
+      res.json({ success: true, message: "分类更新成功" });
     } else {
-      res.json({ success: false, message: "恢复失败" });
+      res.json({ success: false, message: "更新失败" });
     }
   } catch (error) {
-    console.error("恢复文件错误:", error);
-    res.json({ success: false, message: "恢复失败: " + error.message });
-  }
-};
-
-// 彻底删除
-exports.permanentDelete = async (req, res) => {
-  try {
-    const fileId = req.params.id;
-    const file = TrashModel.findById(fileId);
-
-    if (!file) {
-      return res.json({ success: false, message: "文件不存在" });
-    }
-
-    // 检查权限
-    if (file.userId !== req.session.userId && !req.session.isAdmin) {
-      return res.json({ success: false, message: "无权删除此文件" });
-    }
-
-    const deleted = TrashModel.permanentDelete(fileId);
-
-    if (deleted) {
-      res.json({ success: true, message: "文件已彻底删除" });
-    } else {
-      res.json({ success: false, message: "删除失败" });
-    }
-  } catch (error) {
-    console.error("彻底删除文件错误:", error);
-    res.json({ success: false, message: "删除失败: " + error.message });
-  }
-};
-
-// 清空回收站
-exports.emptyTrash = async (req, res) => {
-  try {
-    const userId = req.session.userId;
-    const count = TrashModel.emptyByUserId(userId);
-
-    res.json({ success: true, message: `已清空 ${count} 个文件` });
-  } catch (error) {
-    console.error("清空回收站错误:", error);
-    res.json({ success: false, message: "清空失败: " + error.message });
+    console.error("更新文件分类错误:", error);
+    res.json({ success: false, message: "更新失败: " + error.message });
   }
 };

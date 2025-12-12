@@ -2,12 +2,26 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <!-- Header -->
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 flex items-center mb-2">
-      <i class="bi bi-globe mr-3 text-primary"></i>
-      公共资源区
-    </h1>
-    <p class="text-gray-600">这里展示所有用户公开分享的文件</p>
+  <div
+    class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8"
+  >
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 flex items-center mb-2">
+        <i class="bi bi-globe mr-3 text-primary"></i>
+        公共资源区
+      </h1>
+      <p class="text-gray-600">这里展示所有用户公开分享的文件</p>
+    </div>
+    <div class="relative w-full sm:w-auto">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="搜索文件名..."
+        class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+        onkeyup="searchFiles()"
+      />
+      <i class="bi bi-search absolute left-3 top-3 text-gray-400"></i>
+    </div>
   </div>
 
   <% if (files.length === 0) { %>
@@ -18,145 +32,319 @@
     <p class="text-gray-400">上传文件时勾选"公开此文件"即可分享到这里</p>
   </div>
   <% } else { %>
-  <!-- Desktop Table View -->
-  <div class="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            文件名
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            上传者
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            描述
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            大小
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            上传时间
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            操作
-          </th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
-        <% files.forEach(file => { %>
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4">
-            <div class="flex items-center">
-              <i class="bi bi-file-earmark-text text-2xl text-primary mr-3"></i>
-              <span class="text-sm font-medium text-gray-900"
-                ><%= file.originalName %></span
+  <!-- 分类和文件区域 -->
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- 左侧分类栏 -->
+    <div class="lg:w-64 flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-md p-4">
+        <div class="flex items-center mb-4">
+          <h3 class="font-bold text-gray-900 flex items-center">
+            <i class="bi bi-folder mr-2 text-primary"></i>
+            分类
+          </h3>
+        </div>
+        <ul class="space-y-1" id="categoryList">
+          <!-- 全部文件 -->
+          <li>
+            <a
+              href="#"
+              onclick="filterByCategory('all'); return false;"
+              class="category-item flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:text-primary active"
+              data-category="all"
+            >
+              <span class="flex items-center">
+                <i class="bi bi-files mr-2"></i>
+                全部文件
+              </span>
+              <span class="text-xs text-gray-500"><%= files.length %></span>
+            </a>
+          </li>
+          <!-- 固定分类 -->
+          <% const fixedCategories = [ { id: 'code', name: '代码', icon:
+          'bi-code-slash' }, { id: 'memo', name: '备忘', icon: 'bi-journal-text'
+          }, { id: 'image', name: '图片', icon: 'bi-image' }, { id: 'other',
+          name: '其他', icon: 'bi-folder' } ]; %> <%
+          fixedCategories.forEach(category => { %>
+          <li>
+            <a
+              href="#"
+              onclick="filterByCategory('<%= category.id %>'); return false;"
+              class="category-item flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:text-primary"
+              data-category="<%= category.id %>"
+            >
+              <span class="flex items-center">
+                <i class="bi <%= category.icon %> mr-2"></i>
+                <%= category.name %>
+              </span>
+              <span class="text-xs text-gray-500"
+                ><%= files.filter(f => f.category === category.id).length
+                %></span
               >
+            </a>
+          </li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 右侧文件列表 -->
+    <div class="flex-1">
+      <!-- Desktop Table View -->
+      <div
+        class="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden"
+      >
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                文件名
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                上传者
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                描述
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                大小
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                上传时间
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200" id="filesTable">
+            <% files.forEach(file => { %>
+            <tr
+              class="hover:bg-gray-50 transition-colors file-row"
+              data-category="<%= file.category || 'other' %>"
+              data-filename="<%= file.originalName.toLowerCase() %>"
+            >
+              <td class="px-6 py-4">
+                <div class="flex items-center">
+                  <% const ext =
+                  file.originalName.split('.').pop().toLowerCase(); const
+                  imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+                  'svg']; const isImage = imageExts.includes(ext); %>
+                  <i
+                    class="bi <%= isImage ? 'bi-image' : 'bi-file-earmark-text' %> text-2xl text-primary mr-3"
+                  ></i>
+                  <span class="text-sm font-medium text-gray-900"
+                    ><%= file.originalName %></span
+                  >
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <i class="bi bi-person-circle mr-1"></i><%= file.uploaderName %>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                <%= file.description || '-' %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= (file.size / 1024).toFixed(2) %> KB
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+              </td>
+              <td
+                class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3"
+              >
+                <a
+                  href="/files/view/<%= file.id %>"
+                  class="text-primary hover:text-secondary transition-colors"
+                  title="查看文件"
+                >
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a
+                  href="/files/download/<%= file.id %>"
+                  class="text-blue-600 hover:text-blue-800 transition-colors"
+                  title="下载文件"
+                >
+                  <i class="bi bi-download"></i>
+                </a>
+                <a
+                  href="/comments/<%= file.id %>"
+                  class="text-green-600 hover:text-green-800 transition-colors"
+                  title="评论"
+                >
+                  <i class="bi bi-chat-dots"></i>
+                </a>
+              </td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4" id="filesMobile">
+        <% files.forEach(file => { %>
+        <div
+          class="file-card bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow"
+          data-category="<%= file.category || 'other' %>"
+          data-filename="<%= file.originalName.toLowerCase() %>"
+        >
+          <div class="flex items-start mb-3">
+            <% const extMobile =
+            file.originalName.split('.').pop().toLowerCase(); const
+            imageExtsMobile = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+            'svg']; const isImageMobile = imageExtsMobile.includes(extMobile);
+            %>
+            <i
+              class="bi <%= isImageMobile ? 'bi-image' : 'bi-file-earmark-text' %> text-3xl text-primary mr-3 flex-shrink-0"
+            ></i>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-sm font-medium text-gray-900 truncate">
+                <%= file.originalName %>
+              </h3>
+              <p class="text-xs text-gray-500">
+                <i class="bi bi-person-circle mr-1"></i><%= file.uploaderName %>
+                · <%= (file.size / 1024).toFixed(2) %> KB
+              </p>
             </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <i class="bi bi-person-circle mr-1"></i><%= file.uploaderName %>
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600">
-            <%= file.description || '-' %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <%= (file.size / 1024).toFixed(2) %> KB
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+          </div>
+          <% if (file.description) { %>
+          <p class="text-xs text-gray-600 mb-3"><%= file.description %></p>
+          <% } %>
+          <div class="text-xs text-gray-500 mb-3">
             <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+          </div>
+          <div class="flex space-x-2">
             <a
               href="/files/view/<%= file.id %>"
-              class="text-primary hover:text-secondary transition-colors"
-              title="查看文件"
+              class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm"
             >
-              <i class="bi bi-eye"></i>
+              <i class="bi bi-eye mr-1"></i>查看
             </a>
             <a
               href="/files/download/<%= file.id %>"
-              class="text-blue-600 hover:text-blue-800 transition-colors"
-              title="下载文件"
+              class="flex-1 text-center px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
             >
-              <i class="bi bi-download"></i>
+              <i class="bi bi-download mr-1"></i>下载
             </a>
             <a
               href="/comments/<%= file.id %>"
-              class="text-green-600 hover:text-green-800 transition-colors"
-              title="评论"
+              class="flex-1 text-center px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
             >
-              <i class="bi bi-chat-dots"></i>
+              <i class="bi bi-chat-dots mr-1"></i>评论
             </a>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Mobile Card View -->
-  <div class="lg:hidden space-y-4">
-    <% files.forEach(file => { %>
-    <div
-      class="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow"
-    >
-      <div class="flex items-start mb-3">
-        <i
-          class="bi bi-file-earmark-text text-3xl text-primary mr-3 flex-shrink-0"
-        ></i>
-        <div class="min-w-0 flex-1">
-          <h3 class="text-sm font-medium text-gray-900 truncate">
-            <%= file.originalName %>
-          </h3>
-          <p class="text-xs text-gray-500">
-            <i class="bi bi-person-circle mr-1"></i><%= file.uploaderName %> ·
-            <%= (file.size / 1024).toFixed(2) %> KB
-          </p>
+          </div>
         </div>
-      </div>
-      <% if (file.description) { %>
-      <p class="text-xs text-gray-600 mb-3"><%= file.description %></p>
-      <% } %>
-      <div class="text-xs text-gray-500 mb-3">
-        <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
-      </div>
-      <div class="flex space-x-2">
-        <a
-          href="/files/view/<%= file.id %>"
-          class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm"
-        >
-          <i class="bi bi-eye mr-1"></i>查看
-        </a>
-        <a
-          href="/files/download/<%= file.id %>"
-          class="flex-1 text-center px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-        >
-          <i class="bi bi-download mr-1"></i>下载
-        </a>
-        <a
-          href="/comments/<%= file.id %>"
-          class="flex-1 text-center px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
-        >
-          <i class="bi bi-chat-dots mr-1"></i>评论
-        </a>
+        <% }); %>
       </div>
     </div>
-    <% }); %>
   </div>
   <% } %>
 </div>
+
+<script>
+  // 搜索功能
+  function searchFiles() {
+    const filter = document.getElementById("searchInput").value.toLowerCase();
+    const currentCategory = getCurrentCategory();
+
+    // Desktop table search
+    const table = document.getElementById("filesTable");
+    if (table) {
+      const rows = table.getElementsByTagName("tr");
+      for (let i = 0; i < rows.length; i++) {
+        const filename = rows[i].dataset.filename;
+        const category = rows[i].dataset.category;
+        if (filename) {
+          const matchSearch = filename.indexOf(filter) > -1;
+          const matchCategory =
+            currentCategory === "all" || category === currentCategory;
+          rows[i].style.display = matchSearch && matchCategory ? "" : "none";
+        }
+      }
+    }
+
+    // Mobile cards search
+    const mobileContainer = document.getElementById("filesMobile");
+    if (mobileContainer) {
+      const cards = mobileContainer.children;
+      for (let i = 0; i < cards.length; i++) {
+        const filename = cards[i].dataset.filename;
+        const category = cards[i].dataset.category;
+        if (filename) {
+          const matchSearch = filename.indexOf(filter) > -1;
+          const matchCategory =
+            currentCategory === "all" || category === currentCategory;
+          cards[i].style.display = matchSearch && matchCategory ? "" : "none";
+        }
+      }
+    }
+  }
+
+  // 分类过滤
+  let currentCategory = "all";
+
+  function getCurrentCategory() {
+    return currentCategory;
+  }
+
+  function filterByCategory(categoryId) {
+    currentCategory = categoryId;
+
+    // 更新分类项激活状态
+    document.querySelectorAll(".category-item").forEach((item) => {
+      item.classList.remove("active", "bg-primary", "text-white");
+      item.classList.add("text-gray-700");
+    });
+    const activeItem = document.querySelector(
+      `.category-item[data-category="${categoryId}"]`
+    );
+    if (activeItem) {
+      activeItem.classList.add("active", "bg-primary", "text-white");
+      activeItem.classList.remove("text-gray-700");
+    }
+
+    // 过滤文件
+    const searchFilter = document
+      .getElementById("searchInput")
+      .value.toLowerCase();
+
+    // Desktop
+    const tableRows = document.querySelectorAll(".file-row");
+    tableRows.forEach((row) => {
+      const category = row.dataset.category;
+      const filename = row.dataset.filename;
+      const matchCategory = categoryId === "all" || category === categoryId;
+      const matchSearch = !searchFilter || filename.includes(searchFilter);
+      row.style.display = matchCategory && matchSearch ? "" : "none";
+    });
+
+    // Mobile
+    const mobileCards = document.querySelectorAll(".file-card");
+    mobileCards.forEach((card) => {
+      const category = card.dataset.category;
+      const filename = card.dataset.filename;
+      const matchCategory = categoryId === "all" || category === categoryId;
+      const matchSearch = !searchFilter || filename.includes(searchFilter);
+      card.style.display = matchCategory && matchSearch ? "" : "none";
+    });
+  }
+
+  // 页面加载时激活默认分类
+  document.addEventListener("DOMContentLoaded", function () {
+    filterByCategory("all");
+  });
+</script>
 
 <%- include('../partials/footer') %>

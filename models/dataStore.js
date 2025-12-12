@@ -11,6 +11,7 @@ const FILES_FILE = path.join(DATA_DIR, "files.json");
 const VERIFICATION_CODES_FILE = path.join(DATA_DIR, "verification_codes.json");
 const TRASH_FILE = path.join(DATA_DIR, "trash.json");
 const COMMENTS_FILE = path.join(DATA_DIR, "comments.json");
+const CATEGORIES_FILE = path.join(DATA_DIR, "categories.json");
 
 // 确保数据目录存在
 if (!fs.existsSync(DATA_DIR)) {
@@ -33,6 +34,17 @@ function initDataFiles() {
   }
   if (!fs.existsSync(COMMENTS_FILE)) {
     fs.writeFileSync(COMMENTS_FILE, JSON.stringify([]));
+  }
+  if (!fs.existsSync(CATEGORIES_FILE)) {
+    // 初始化固定分类
+    const defaultCategories = [
+      { id: "all", name: "全部文件", isSystem: true },
+      { id: "code", name: "代码", isSystem: true },
+      { id: "memo", name: "备忘", isSystem: true },
+      { id: "image", name: "图片", isSystem: true },
+      { id: "other", name: "其他", isSystem: true },
+    ];
+    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(defaultCategories));
   }
 }
 
@@ -171,6 +183,12 @@ const FileModel = {
     return files.filter((file) => file.userId === userId);
   },
 
+  // 计算用户已使用的存储空间（字节）
+  getUserStorageUsed(userId) {
+    const files = this.findByUserId(userId);
+    return files.reduce((total, file) => total + (file.size || 0), 0);
+  },
+
   // 获取公共文件
   findPublic() {
     const files = this.findAll();
@@ -191,6 +209,7 @@ const FileModel = {
       mimetype: fileData.mimetype,
       isPublic: fileData.isPublic || false,
       description: fileData.description || "",
+      category: fileData.category || "other",
       uploadedAt: new Date().toISOString(),
     };
 
@@ -447,6 +466,20 @@ const CommentModel = {
   },
 };
 
+// 分类管理
+const CategoryModel = {
+  // 获取所有分类
+  findAll() {
+    return readData(CATEGORIES_FILE);
+  },
+
+  // 根据ID查找分类
+  findById(categoryId) {
+    const categories = this.findAll();
+    return categories.find((cat) => cat.id === categoryId);
+  },
+};
+
 // 初始化
 initDataFiles();
 
@@ -456,4 +489,5 @@ module.exports = {
   VerificationCodeModel,
   TrashModel,
   CommentModel,
+  CategoryModel,
 };

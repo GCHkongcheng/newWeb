@@ -5,10 +5,29 @@
   <div
     class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8"
   >
-    <h1 class="text-3xl font-bold text-gray-900 flex items-center">
-      <i class="bi bi-folder2-open mr-3 text-primary"></i>
-      我的文件
-    </h1>
+    <div class="flex items-center gap-4">
+      <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+        <i class="bi bi-folder2-open mr-3 text-primary"></i>
+        我的文件
+      </h1>
+      <!-- 存储空间小型显示 -->
+      <div
+        class="hidden sm:flex items-center bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200"
+      >
+        <i class="bi bi-hdd text-primary mr-2 text-sm"></i>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-600">
+            <%= (usedStorage / 1024 / 1024).toFixed(1) %>MB / <%= (maxStorage /
+            1024 / 1024).toFixed(0) %>MB
+          </span>
+          <span
+            class="text-xs font-semibold <%= storagePercent >= 90 ? 'text-red-600' : storagePercent >= 70 ? 'text-yellow-600' : 'text-primary' %>"
+          >
+            (<%= storagePercent %>%)
+          </span>
+        </div>
+      </div>
+    </div>
     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
       <div class="relative">
         <input
@@ -30,175 +49,277 @@
     </div>
   </div>
 
-  <!-- Files List -->
-  <% if (files.length === 0) { %>
-  <div class="bg-white rounded-xl shadow-md p-12 text-center">
-    <i class="bi bi-inbox text-6xl text-gray-300 mb-4"></i>
-    <p class="text-xl text-gray-600 mb-2">还没有上传任何文件</p>
-    <p class="text-gray-400">点击上传按钮开始使用</p>
+  <!-- 移动端存储空间显示 -->
+  <div class="sm:hidden mb-4">
+    <div
+      class="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200 flex items-center justify-between"
+    >
+      <div class="flex items-center gap-2">
+        <i class="bi bi-hdd text-primary text-sm"></i>
+        <span class="text-xs text-gray-600">
+          <%= (usedStorage / 1024 / 1024).toFixed(1) %>MB / <%= (maxStorage /
+          1024 / 1024).toFixed(0) %>MB
+        </span>
+      </div>
+      <span
+        class="text-xs font-semibold <%= storagePercent >= 90 ? 'text-red-600' : storagePercent >= 70 ? 'text-yellow-600' : 'text-primary' %>"
+      >
+        <%= storagePercent %>%
+      </span>
+    </div>
   </div>
-  <% } else { %>
-  <!-- Desktop Table View -->
-  <div class="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            文件名
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            大小
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            类型
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            上传时间
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            状态
-          </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
-            操作
-          </th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200" id="filesTable">
-        <% files.forEach(file => { %>
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex items-center">
-              <i class="bi bi-file-earmark-text text-2xl text-primary mr-3"></i>
-              <span class="text-sm font-medium text-gray-900"
-                ><%= file.originalName %></span
-              >
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <%= (file.size / 1024).toFixed(2) %> KB
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <span class="px-2 py-1 bg-gray-100 rounded text-xs"
-              ><%= file.mimetype %></span
+
+  <!-- 分类和文件区域 -->
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- 左侧分类栏 -->
+    <div class="lg:w-64 flex-shrink-0">
+      <div class="bg-white rounded-xl shadow-md p-4">
+        <div class="flex items-center mb-4">
+          <h3 class="font-bold text-gray-900 flex items-center">
+            <i class="bi bi-folder mr-2 text-primary"></i>
+            分类
+          </h3>
+        </div>
+        <ul class="space-y-1" id="categoryList">
+          <!-- 全部文件 -->
+          <li>
+            <a
+              href="#"
+              onclick="filterByCategory('all'); return false;"
+              class="category-item flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:text-primary active"
+              data-category="all"
             >
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
+              <span class="flex items-center">
+                <i class="bi bi-files mr-2"></i>
+                全部文件
+              </span>
+              <span class="text-xs text-gray-500"><%= files.length %></span>
+            </a>
+          </li>
+          <!-- 固定分类 -->
+          <% const fixedCategories = [ { id: 'code', name: '代码', icon:
+          'bi-code-slash' }, { id: 'memo', name: '备忘', icon: 'bi-journal-text'
+          }, { id: 'image', name: '图片', icon: 'bi-image' }, { id: 'other',
+          name: '其他', icon: 'bi-folder' } ]; %> <%
+          fixedCategories.forEach(category => { %>
+          <li>
+            <a
+              href="#"
+              onclick="filterByCategory('<%= category.id %>'); return false;"
+              class="category-item flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700 hover:text-primary"
+              data-category="<%= category.id %>"
+            >
+              <span class="flex items-center">
+                <i class="bi <%= category.icon %> mr-2"></i>
+                <%= category.name %>
+              </span>
+              <span class="text-xs text-gray-500"
+                ><%= files.filter(f => f.category === category.id).length
+                %></span
+              >
+            </a>
+          </li>
+          <% }); %>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 右侧文件列表 -->
+    <div class="flex-1">
+      <!-- Files List -->
+      <% if (files.length === 0) { %>
+      <div class="bg-white rounded-xl shadow-md p-12 text-center">
+        <i class="bi bi-inbox text-6xl text-gray-300 mb-4"></i>
+        <p class="text-xl text-gray-600 mb-2">还没有上传任何文件</p>
+        <p class="text-gray-400">点击上传按钮开始使用</p>
+      </div>
+      <% } else { %>
+      <!-- Desktop Table View -->
+      <div
+        class="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden"
+      >
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                文件名
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                大小
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                类型
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                上传时间
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                状态
+              </th>
+              <th
+                class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                操作
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200" id="filesTable">
+            <% files.forEach(file => { %>
+            <tr
+              class="hover:bg-gray-50 transition-colors file-row"
+              data-category="<%= file.category || 'uncategorized' %>"
+              data-filename="<%= file.originalName.toLowerCase() %>"
+            >
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <% const ext =
+                  file.originalName.split('.').pop().toLowerCase(); const
+                  imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+                  'svg']; const isImage = imageExts.includes(ext); %>
+                  <i
+                    class="bi <%= isImage ? 'bi-image' : 'bi-file-earmark-text' %> text-2xl text-primary mr-3"
+                  ></i>
+                  <span class="text-sm font-medium text-gray-900"
+                    ><%= file.originalName %></span
+                  >
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= (file.size / 1024).toFixed(2) %> KB
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <span class="px-2 py-1 bg-gray-100 rounded text-xs"
+                  ><%= file.mimetype %></span
+                >
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <% if (file.isPublic) { %>
+                <span
+                  class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                >
+                  <i class="bi bi-globe mr-1"></i> 公开
+                </span>
+                <% } else { %>
+                <span
+                  class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+                >
+                  <i class="bi bi-lock mr-1"></i> 私有
+                </span>
+                <% } %>
+              </td>
+              <td
+                class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
+              >
+                <a
+                  href="/files/view/<%= file.id %>"
+                  class="text-primary hover:text-secondary transition-colors"
+                >
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a
+                  href="/files/download/<%= file.id %>"
+                  class="text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  <i class="bi bi-download"></i>
+                </a>
+                <button
+                  onclick="deleteFile('<%= file.id %>')"
+                  class="text-red-600 hover:text-red-800 transition-colors"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="lg:hidden space-y-4" id="filesMobile">
+        <% files.forEach(file => { %>
+        <div
+          class="file-card bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow"
+          data-category="<%= file.category || 'uncategorized' %>"
+          data-filename="<%= file.originalName.toLowerCase() %>"
+        >
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center flex-1 min-w-0">
+              <% const extMobile =
+              file.originalName.split('.').pop().toLowerCase(); const
+              imageExtsMobile = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp',
+              'svg']; const isImageMobile = imageExtsMobile.includes(extMobile);
+              %>
+              <i
+                class="bi <%= isImageMobile ? 'bi-image' : 'bi-file-earmark-text' %> text-3xl text-primary mr-3 flex-shrink-0"
+              ></i>
+              <div class="min-w-0 flex-1">
+                <h3 class="text-sm font-medium text-gray-900 truncate">
+                  <%= file.originalName %>
+                </h3>
+                <p class="text-xs text-gray-500">
+                  <%= (file.size / 1024).toFixed(2) %> KB
+                </p>
+              </div>
+            </div>
             <% if (file.isPublic) { %>
             <span
-              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+              class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 flex-shrink-0"
             >
-              <i class="bi bi-globe mr-1"></i> 公开
+              <i class="bi bi-globe"></i>
             </span>
             <% } else { %>
             <span
-              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+              class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 flex-shrink-0"
             >
-              <i class="bi bi-lock mr-1"></i> 私有
+              <i class="bi bi-lock"></i>
             </span>
             <% } %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+          </div>
+          <div class="text-xs text-gray-500 mb-3">
+            <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+          </div>
+          <div class="flex space-x-2">
             <a
               href="/files/view/<%= file.id %>"
-              class="text-primary hover:text-secondary transition-colors"
+              class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm"
             >
-              <i class="bi bi-eye"></i>
+              <i class="bi bi-eye mr-1"></i>查看
             </a>
             <a
               href="/files/download/<%= file.id %>"
-              class="text-blue-600 hover:text-blue-800 transition-colors"
+              class="flex-1 text-center px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
             >
-              <i class="bi bi-download"></i>
+              <i class="bi bi-download mr-1"></i>下载
             </a>
             <button
               onclick="deleteFile('<%= file.id %>')"
-              class="text-red-600 hover:text-red-800 transition-colors"
+              class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
             >
               <i class="bi bi-trash"></i>
             </button>
-          </td>
-        </tr>
-        <% }); %>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Mobile Card View -->
-  <div class="lg:hidden space-y-4" id="filesMobile">
-    <% files.forEach(file => { %>
-    <div
-      class="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow"
-    >
-      <div class="flex items-start justify-between mb-3">
-        <div class="flex items-center flex-1 min-w-0">
-          <i
-            class="bi bi-file-earmark-text text-3xl text-primary mr-3 flex-shrink-0"
-          ></i>
-          <div class="min-w-0 flex-1">
-            <h3 class="text-sm font-medium text-gray-900 truncate">
-              <%= file.originalName %>
-            </h3>
-            <p class="text-xs text-gray-500">
-              <%= (file.size / 1024).toFixed(2) %> KB
-            </p>
           </div>
         </div>
-        <% if (file.isPublic) { %>
-        <span
-          class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 flex-shrink-0"
-        >
-          <i class="bi bi-globe"></i>
-        </span>
-        <% } else { %>
-        <span
-          class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 flex-shrink-0"
-        >
-          <i class="bi bi-lock"></i>
-        </span>
-        <% } %>
+        <% }); %>
       </div>
-      <div class="text-xs text-gray-500 mb-3">
-        <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
-      </div>
-      <div class="flex space-x-2">
-        <a
-          href="/files/view/<%= file.id %>"
-          class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm"
-        >
-          <i class="bi bi-eye mr-1"></i>查看
-        </a>
-        <a
-          href="/files/download/<%= file.id %>"
-          class="flex-1 text-center px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-        >
-          <i class="bi bi-download mr-1"></i>下载
-        </a>
-        <button
-          onclick="deleteFile('<%= file.id %>')"
-          class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-        >
-          <i class="bi bi-trash"></i>
-        </button>
-      </div>
+      <% } %>
     </div>
-    <% }); %>
+    <!-- 关闭右侧文件列表区域 -->
   </div>
-  <% } %>
+  <!-- 关闭分类和文件flex容器 -->
 </div>
 
 <!-- Upload Modal -->
@@ -233,13 +354,17 @@
               type="file"
               name="file"
               id="fileInput"
-              accept=".txt,.md,.cpp,.py,.js,.html,.css,.json,.xml,.java,.c,.h,.cs"
+              accept=".txt,.md,.cpp,.py,.js,.html,.css,.json,.xml,.java,.c,.h,.cs,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg"
               required
               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-secondary file:cursor-pointer cursor-pointer"
+              onchange="updateCategoryByFileType()"
             />
           </div>
           <p class="mt-2 text-xs text-gray-500">
-            支持: txt, md, cpp, py, js, html, css, json, xml, java, c, h, cs
+            支持代码: txt, md, cpp, py, js, html, css, json, xml, java, c, h,
+            cs<br />
+            支持图片: jpg, jpeg, png, gif, bmp, webp, svg<br />
+            <span class="text-red-600 font-medium">单个文件最大 3MB</span>
           </p>
         </div>
 
@@ -253,6 +378,22 @@
           <label for="isPublic" class="ml-2 text-sm text-gray-700"
             >公开此文件</label
           >
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >分类</label
+          >
+          <select
+            name="category"
+            id="category"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+          >
+            <option value="code">代码</option>
+            <option value="memo">备忘</option>
+            <option value="image">图片</option>
+            <option value="other" selected>其他</option>
+          </select>
         </div>
 
         <div>
@@ -290,6 +431,44 @@
 </div>
 
 <script>
+  // 根据文件类型自动设置分类
+  function updateCategoryByFileType() {
+    const fileInput = document.getElementById("fileInput");
+    const categorySelect = document.getElementById("category");
+
+    if (fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+      const fileName = file.name.toLowerCase();
+      const ext = fileName.substring(fileName.lastIndexOf("."));
+
+      // 图片扩展名
+      const imageExts = [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".webp",
+        ".svg",
+      ];
+
+      if (imageExts.includes(ext)) {
+        // 如果是图片，只显示图片选项并自动选择
+        categorySelect.innerHTML = '<option value="image">图片</option>';
+        categorySelect.value = "image";
+        categorySelect.disabled = true;
+      } else {
+        // 如果不是图片，显示其他选项（不包括图片）
+        categorySelect.innerHTML = `
+          <option value="code">代码</option>
+          <option value="memo">备忘</option>
+          <option value="other" selected>其他</option>
+        `;
+        categorySelect.disabled = false;
+      }
+    }
+  }
+
   document
     .getElementById("uploadForm")
     .addEventListener("submit", async (e) => {
@@ -299,15 +478,29 @@
       const fileInput = document.getElementById("fileInput");
       const isPublic = document.getElementById("isPublic").checked;
       const description = document.getElementById("description").value;
+      const category = document.getElementById("category").value;
 
       if (!fileInput.files[0]) {
         alert("请选择文件");
         return;
       }
 
+      // 检查文件大小
+      const fileSize = fileInput.files[0].size;
+      const maxSize = 3 * 1024 * 1024; // 3MB
+      if (fileSize > maxSize) {
+        alert(
+          `文件大小超过限制！\n当前文件: ${(fileSize / 1024 / 1024).toFixed(
+            2
+          )}MB\n最大允许: 3MB`
+        );
+        return;
+      }
+
       formData.append("file", fileInput.files[0]);
       formData.append("isPublic", isPublic);
       formData.append("description", description);
+      formData.append("category", category);
 
       try {
         const response = await fetch("/files/upload", {
@@ -329,7 +522,7 @@
     });
 
   async function deleteFile(fileId) {
-    if (!confirm("确定要删除这个文件吗？文件将移至回收站。")) {
+    if (!confirm("确定要删除这个文件吗？删除后无法恢复！")) {
       return;
     }
 
@@ -354,6 +547,9 @@
   function searchFiles() {
     const input = document.getElementById("searchInput");
     const filter = input.value.toLowerCase();
+    const currentCategory =
+      document.querySelector(".category-item.active")?.dataset.category ||
+      "all";
 
     // Desktop table search
     const tableBody = document.getElementById("filesTable");
@@ -361,13 +557,13 @@
       const rows = tableBody.getElementsByTagName("tr");
       for (let i = 0; i < rows.length; i++) {
         const nameCell = rows[i].getElementsByTagName("td")[0];
+        const category = rows[i].dataset.category;
         if (nameCell) {
           const textValue = nameCell.textContent || nameCell.innerText;
-          if (textValue.toLowerCase().indexOf(filter) > -1) {
-            rows[i].style.display = "";
-          } else {
-            rows[i].style.display = "none";
-          }
+          const matchSearch = textValue.toLowerCase().indexOf(filter) > -1;
+          const matchCategory =
+            currentCategory === "all" || category === currentCategory;
+          rows[i].style.display = matchSearch && matchCategory ? "" : "none";
         }
       }
     }
@@ -378,17 +574,81 @@
       const cards = mobileContainer.children;
       for (let i = 0; i < cards.length; i++) {
         const h3 = cards[i].getElementsByTagName("h3")[0];
+        const category = cards[i].dataset.category;
         if (h3) {
           const textValue = h3.textContent || h3.innerText;
-          if (textValue.toLowerCase().indexOf(filter) > -1) {
-            cards[i].style.display = "";
-          } else {
-            cards[i].style.display = "none";
-          }
+          const matchSearch = textValue.toLowerCase().indexOf(filter) > -1;
+          const matchCategory =
+            currentCategory === "all" || category === currentCategory;
+          cards[i].style.display = matchSearch && matchCategory ? "" : "none";
         }
       }
     }
   }
+
+  // 分类过滤
+  let currentCategory = "all";
+
+  function filterByCategory(categoryId) {
+    currentCategory = categoryId;
+
+    // 更新分类项激活状态
+    document.querySelectorAll(".category-item").forEach((item) => {
+      item.classList.remove("active", "bg-primary", "text-white");
+      item.classList.add("text-gray-700");
+    });
+    const activeItem = document.querySelector(
+      `.category-item[data-category="${categoryId}"]`
+    );
+    if (activeItem) {
+      activeItem.classList.add("active", "bg-primary", "text-white");
+      activeItem.classList.remove("text-gray-700");
+    }
+
+    // 过滤文件
+    const searchFilter = document
+      .getElementById("searchInput")
+      .value.toLowerCase();
+
+    // Desktop
+    const tableRows = document.querySelectorAll(".file-row");
+    tableRows.forEach((row) => {
+      const category = row.dataset.category;
+      const filename = row.dataset.filename;
+      const matchCategory = categoryId === "all" || category === categoryId;
+      const matchSearch = !searchFilter || filename.includes(searchFilter);
+      row.style.display = matchCategory && matchSearch ? "" : "none";
+    });
+
+    // Mobile
+    const mobileCards = document.querySelectorAll(".file-card");
+    mobileCards.forEach((card) => {
+      const category = card.dataset.category;
+      const filename = card.dataset.filename;
+      const matchCategory = categoryId === "all" || category === categoryId;
+      const matchSearch = !searchFilter || filename.includes(searchFilter);
+      card.style.display = matchCategory && matchSearch ? "" : "none";
+    });
+  }
+
+  // 创建分类（已禁用）
+  function showCreateCategoryModal() {
+    alert("固定分类不支持创建，请在上传时选择：代码、备忘、其他");
+  }
+
+  async function createCategory(name) {
+    alert("功能已禁用");
+  }
+
+  // 删除分类（已禁用）
+  async function deleteCategory(categoryId, categoryName) {
+    alert("固定分类不支持删除");
+  }
+
+  // 页面加载时激活默认分类
+  document.addEventListener("DOMContentLoaded", function () {
+    filterByCategory("all");
+  });
 </script>
 
 <%- include('../partials/footer') %>

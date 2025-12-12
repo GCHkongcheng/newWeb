@@ -19,6 +19,13 @@ const ALLOWED_EXTENSIONS = [
   ".c",
   ".h",
   ".cs",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".bmp",
+  ".webp",
+  ".svg",
 ];
 
 // 配置存储
@@ -79,7 +86,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 限制 10MB
+    fileSize: 3 * 1024 * 1024, // 限制 3MB
   },
 });
 

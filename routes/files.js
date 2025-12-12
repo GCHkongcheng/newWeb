@@ -22,16 +22,10 @@ router.get("/download/:id", fileController.downloadFile);
 // 删除文件
 router.delete("/:id", fileController.deleteFile);
 
-// 回收站
-router.get("/trash", fileController.showTrash);
-
-// 恢复文件
-router.post("/trash/restore/:id", fileController.restoreFile);
-
-// 彻底删除
-router.delete("/trash/:id", fileController.permanentDelete);
-
-// 清空回收站
-router.post("/trash/empty", fileController.emptyTrash);
+// 分类管理
+router.post("/category/create", fileController.createCategory);
+router.put("/category/update", fileController.updateCategory);
+router.delete("/category/delete", fileController.deleteCategory);
+router.put("/category/update-file", fileController.updateFileCategory);
 
 module.exports = router;
