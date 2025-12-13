@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 // 显示用户中心页面
 exports.showProfile = async (req, res) => {
   try {
-    const user = UserModel.findById(req.session.userId);
+    const user = await UserModel.findById(req.session.userId);
 
     if (!user) {
       return res.redirect("/auth/login");
@@ -12,7 +12,7 @@ exports.showProfile = async (req, res) => {
 
     res.render("profile/index", {
       user: {
-        userId: user.id,
+        userId: user._id.toString(),
         username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,
@@ -44,10 +44,10 @@ exports.updateUsername = async (req, res) => {
 
     // 验证输入
     if (!newUsername || !password) {
-      const user = UserModel.findById(userId);
+      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -60,10 +60,10 @@ exports.updateUsername = async (req, res) => {
 
     // 验证用户名长度
     if (newUsername.length < 2 || newUsername.length > 20) {
-      const user = UserModel.findById(userId);
+      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -75,7 +75,7 @@ exports.updateUsername = async (req, res) => {
     }
 
     // 查找用户
-    const user = UserModel.findById(userId);
+    const user = await UserModel.findById(userId);
 
     if (!user) {
       return res.redirect("/auth/login");
@@ -87,7 +87,7 @@ exports.updateUsername = async (req, res) => {
     if (!isValidPassword) {
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -99,11 +99,11 @@ exports.updateUsername = async (req, res) => {
     }
 
     // 检查新用户名是否已被使用
-    const existingUser = UserModel.findByUsername(newUsername);
-    if (existingUser && existingUser.id !== userId) {
+    const existingUser = await UserModel.findByUsername(newUsername);
+    if (existingUser && existingUser._id.toString() !== userId) {
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -115,15 +115,15 @@ exports.updateUsername = async (req, res) => {
     }
 
     // 更新用户名
-    UserModel.update(userId, { username: newUsername });
+    await UserModel.update(userId, { username: newUsername });
 
     // 更新 session
     req.session.username = newUsername;
 
-    const updatedUser = UserModel.findById(userId);
+    const updatedUser = await UserModel.findById(userId);
     res.render("profile/index", {
       user: {
-        userId: updatedUser.id,
+        userId: updatedUser._id.toString(),
         username: updatedUser.username,
         email: updatedUser.email,
         isAdmin: updatedUser.isAdmin,
@@ -134,10 +134,10 @@ exports.updateUsername = async (req, res) => {
     });
   } catch (error) {
     console.error("修改用户名错误:", error);
-    const user = UserModel.findById(req.session.userId);
+    const user = await UserModel.findById(req.session.userId);
     res.render("profile/index", {
       user: {
-        userId: user.id,
+        userId: user._id.toString(),
         username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,
@@ -157,10 +157,10 @@ exports.updatePassword = async (req, res) => {
 
     // 验证输入
     if (!currentPassword || !newPassword || !confirmPassword) {
-      const user = UserModel.findById(userId);
+      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -173,10 +173,10 @@ exports.updatePassword = async (req, res) => {
 
     // 验证新密码长度
     if (newPassword.length < 6) {
-      const user = UserModel.findById(userId);
+      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -189,10 +189,10 @@ exports.updatePassword = async (req, res) => {
 
     // 验证两次新密码是否一致
     if (newPassword !== confirmPassword) {
-      const user = UserModel.findById(userId);
+      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -204,7 +204,7 @@ exports.updatePassword = async (req, res) => {
     }
 
     // 查找用户
-    const user = UserModel.findById(userId);
+    const user = await UserModel.findById(userId);
 
     if (!user) {
       return res.redirect("/auth/login");
@@ -219,7 +219,7 @@ exports.updatePassword = async (req, res) => {
     if (!isValidPassword) {
       return res.render("profile/index", {
         user: {
-          userId: user.id,
+          userId: user._id.toString(),
           username: user.username,
           email: user.email,
           isAdmin: user.isAdmin,
@@ -230,16 +230,13 @@ exports.updatePassword = async (req, res) => {
       });
     }
 
-    // 加密新密码
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // 更新密码（update方法内部会自动hash密码）
+    await UserModel.update(userId, { password: newPassword });
 
-    // 更新密码
-    UserModel.update(userId, { password: hashedPassword });
-
-    const updatedUser = UserModel.findById(userId);
+    const updatedUser = await UserModel.findById(userId);
     res.render("profile/index", {
       user: {
-        userId: updatedUser.id,
+        userId: updatedUser._id.toString(),
         username: updatedUser.username,
         email: updatedUser.email,
         isAdmin: updatedUser.isAdmin,
@@ -250,10 +247,10 @@ exports.updatePassword = async (req, res) => {
     });
   } catch (error) {
     console.error("修改密码错误:", error);
-    const user = UserModel.findById(req.session.userId);
+    const user = await UserModel.findById(req.session.userId);
     res.render("profile/index", {
       user: {
-        userId: user.id,
+        userId: user._id.toString(),
         username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,

@@ -3,8 +3,8 @@ const { FileModel, UserModel } = require("../models/dataStore");
 // 管理后台首页
 exports.dashboard = async (req, res) => {
   try {
-    const users = UserModel.findAll();
-    const files = FileModel.findAll();
+    const users = await UserModel.findAll();
+    const files = await FileModel.findAll();
 
     const stats = {
       totalUsers: users.length,
@@ -30,7 +30,7 @@ exports.dashboard = async (req, res) => {
 // 用户管理
 exports.users = async (req, res) => {
   try {
-    const users = UserModel.findAll();
+    const users = await UserModel.findAll();
 
     res.render("admin/users", {
       user: { username: req.session.username, isAdmin: true },
@@ -49,16 +49,18 @@ exports.users = async (req, res) => {
 // 文件管理
 exports.files = async (req, res) => {
   try {
-    const files = FileModel.findAll();
+    const files = await FileModel.findAll();
 
     // 为每个文件添加上传者信息
-    const filesWithUploader = files.map((file) => {
-      const uploader = UserModel.findById(file.userId);
-      return {
-        ...file,
-        uploaderName: uploader ? uploader.username : "未知用户",
-      };
-    });
+    const filesWithUploader = await Promise.all(
+      files.map(async (file) => {
+        const uploader = await UserModel.findById(file.userId);
+        return {
+          ...file.toObject(),
+          uploaderName: uploader ? uploader.username : "未知用户",
+        };
+      })
+    );
 
     res.render("admin/files", {
       user: { username: req.session.username, isAdmin: true },
@@ -78,7 +80,7 @@ exports.files = async (req, res) => {
 exports.deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;
-    const deleted = FileModel.delete(fileId);
+    const deleted = await FileModel.delete(fileId);
 
     if (deleted) {
       res.json({ success: true, message: "文件已删除" });

@@ -3,8 +3,18 @@ const session = require("express-session");
 const path = require("path");
 const config = require("./config/config");
 const { initAdmin } = require("./models/init");
+const connectDB = require("./config/database");
+const { initializeData } = require("./models/dataStore");
 
 const app = express();
+
+// 连接MongoDB
+connectDB().then(async () => {
+  // 初始化默认数据
+  await initializeData();
+  // 初始化管理员账户
+  await initAdmin();
+});
 
 // 中间件配置
 app.use(express.json());

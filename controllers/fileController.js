@@ -8,11 +8,11 @@ const jschardet = require("jschardet");
 exports.showFiles = async (req, res) => {
   try {
     const userId = req.session.userId;
-    const files = FileModel.findByUserId(userId);
-    const categories = CategoryModel.findAll();
+    const files = await FileModel.findByUserId(userId);
+    const categories = await CategoryModel.findAll();
 
     // 计算存储空间
-    const usedStorage = FileModel.getUserStorageUsed(userId);
+    const usedStorage = await FileModel.getUserStorageUsed(userId);
     const maxStorage = 500 * 1024 * 1024; // 500MB
     const storagePercent = ((usedStorage / maxStorage) * 100).toFixed(1);
 
@@ -50,7 +50,7 @@ exports.uploadFile = async (req, res) => {
 
     // 检查用户存储空间
     const maxStorage = 500 * 1024 * 1024; // 500MB
-    const usedStorage = FileModel.getUserStorageUsed(userId);
+    const usedStorage = await FileModel.getUserStorageUsed(userId);
     const fileSize = req.file.size;
 
     if (usedStorage + fileSize > maxStorage) {
@@ -69,7 +69,7 @@ exports.uploadFile = async (req, res) => {
     }
 
     // 创建文件记录
-    const fileRecord = FileModel.create({
+    const fileRecord = await FileModel.create({
       userId: userId,
       filename: req.file.filename,
       originalName: req.file.originalname,
@@ -99,7 +99,7 @@ exports.uploadFile = async (req, res) => {
 exports.viewFile = async (req, res) => {
   try {
     const fileId = req.params.id;
-    const file = FileModel.findById(fileId);
+    const file = await FileModel.findById(fileId);
 
     if (!file) {
       return res.status(404).render("error", {
@@ -172,7 +172,7 @@ exports.viewFile = async (req, res) => {
     }
 
     // 获取上传者信息
-    const uploader = UserModel.findById(file.userId);
+    const uploader = await UserModel.findById(file.userId);
 
     res.render("files/view", {
       user: { username: req.session.username },
@@ -194,7 +194,7 @@ exports.viewFile = async (req, res) => {
 exports.downloadFile = async (req, res) => {
   try {
     const fileId = req.params.id;
-    const file = FileModel.findById(fileId);
+    const file = await FileModel.findById(fileId);
 
     if (!file) {
       return res.status(404).send("文件不存在");
@@ -220,7 +220,7 @@ exports.downloadFile = async (req, res) => {
 exports.deleteFile = async (req, res) => {
   try {
     const fileId = req.params.id;
-    const file = FileModel.findById(fileId);
+    const file = await FileModel.findById(fileId);
 
     if (!file) {
       return res.json({ success: false, message: "文件不存在" });
@@ -238,7 +238,7 @@ exports.deleteFile = async (req, res) => {
     }
 
     // 从数据库中删除文件记录
-    FileModel.delete(fileId);
+    await FileModel.delete(fileId);
 
     res.json({ success: true, message: "文件已删除" });
   } catch (error) {
@@ -268,7 +268,7 @@ exports.updateFileCategory = async (req, res) => {
     const userId = req.session.userId;
     const { fileId, category } = req.body;
 
-    const file = FileModel.findById(fileId);
+    const file = await FileModel.findById(fileId);
 
     if (!file) {
       return res.json({ success: false, message: "文件不存在" });
@@ -278,7 +278,7 @@ exports.updateFileCategory = async (req, res) => {
       return res.json({ success: false, message: "无权修改此文件" });
     }
 
-    const updated = FileModel.update(fileId, { category });
+    const updated = await FileModel.update(fileId, { category });
 
     if (updated) {
       res.json({ success: true, message: "分类更新成功" });

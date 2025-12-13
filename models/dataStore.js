@@ -1,240 +1,169 @@
 const fs = require("fs");
 const path = require("path");
 const bcrypt = require("bcryptjs");
-const { v4: uuidv4 } = require("uuid");
+const mongoose = require("mongoose");
 const config = require("../config/config");
+const User = require("./schemas/User");
+const File = require("./schemas/File");
+const Comment = require("./schemas/Comment");
+const Category = require("./schemas/Category");
+const VerificationCode = require("./schemas/VerificationCode");
 
-// 数据文件路径
-const DATA_DIR = path.join(__dirname, "..", "data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
-const FILES_FILE = path.join(DATA_DIR, "files.json");
-const VERIFICATION_CODES_FILE = path.join(DATA_DIR, "verification_codes.json");
-const TRASH_FILE = path.join(DATA_DIR, "trash.json");
-const COMMENTS_FILE = path.join(DATA_DIR, "comments.json");
-const CATEGORIES_FILE = path.join(DATA_DIR, "categories.json");
-
-// 确保数据目录存在
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-// 初始化数据文件
-function initDataFiles() {
-  if (!fs.existsSync(USERS_FILE)) {
-    fs.writeFileSync(USERS_FILE, JSON.stringify([]));
-  }
-  if (!fs.existsSync(FILES_FILE)) {
-    fs.writeFileSync(FILES_FILE, JSON.stringify([]));
-  }
-  if (!fs.existsSync(VERIFICATION_CODES_FILE)) {
-    fs.writeFileSync(VERIFICATION_CODES_FILE, JSON.stringify({}));
-  }
-  if (!fs.existsSync(TRASH_FILE)) {
-    fs.writeFileSync(TRASH_FILE, JSON.stringify([]));
-  }
-  if (!fs.existsSync(COMMENTS_FILE)) {
-    fs.writeFileSync(COMMENTS_FILE, JSON.stringify([]));
-  }
-  if (!fs.existsSync(CATEGORIES_FILE)) {
+// ==================== 初始化数据 ====================
+async function initializeData() {
+  try {
     // 初始化固定分类
-    const defaultCategories = [
-      { id: "all", name: "全部文件", isSystem: true },
-      { id: "code", name: "代码", isSystem: true },
-      { id: "memo", name: "备忘", isSystem: true },
-      { id: "image", name: "图片", isSystem: true },
-      { id: "other", name: "其他", isSystem: true },
-    ];
-    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(defaultCategories));
-  }
-}
-
-// 读取数据
-function readData(filePath) {
-  try {
-    const data = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(data);
+    const categoryCount = await Category.countDocuments();
+    if (categoryCount === 0) {
+      const defaultCategories = [
+        { name: "代码", icon: "bi-code-slash", isSystem: true },
+        { name: "备忘", icon: "bi-journal-text", isSystem: true },
+        { name: "图片", icon: "bi-image", isSystem: true },
+        { name: "其他", icon: "bi-folder", isSystem: true },
+      ];
+      await Category.insertMany(defaultCategories);
+      console.log("✅ 默认分类已初始化");
+    }
   } catch (error) {
-    console.error(`Error reading ${filePath}:`, error);
-    return filePath === VERIFICATION_CODES_FILE ? {} : [];
+    console.error("初始化数据失败:", error);
   }
 }
 
-// 写入数据
-function writeData(filePath, data) {
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error(`Error writing ${filePath}:`, error);
-    return false;
-  }
-}
-
-// 用户相关操作
+// ==================== 用户模型 ====================
 const UserModel = {
   // 获取所有用户
-  findAll() {
-    return readData(USERS_FILE);
+  async findAll() {
+    return await User.find().select("-password").sort({ createdAt: -1 });
   },
 
   // 根据ID查找用户
-  findById(userId) {
-    const users = this.findAll();
-    return users.find((user) => user.id === userId);
+  async findById(userId) {
+    return await User.findById(userId).select("-password");
   },
 
   // 根据邮箱查找用户
-  findByEmail(email) {
-    const users = this.findAll();
-    return users.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
-    );
+  async findByEmail(email) {
+    return await User.findOne({ email: email.toLowerCase() });
   },
 
   // 根据用户名查找用户
-  findByUsername(username) {
-    const users = this.findAll();
-    return users.find(
-      (user) => user.username.toLowerCase() === username.toLowerCase()
-    );
+  async findByUsername(username) {
+    return await User.findOne({ username });
   },
 
   // 根据邮箱或用户名查找用户
-  findByEmailOrUsername(identifier) {
-    const users = this.findAll();
-    return users.find(
-      (user) =>
-        user.email.toLowerCase() === identifier.toLowerCase() ||
-        user.username.toLowerCase() === identifier.toLowerCase()
-    );
+  async findByEmailOrUsername(identifier) {
+    return await User.findOne({
+      $or: [{ email: identifier.toLowerCase() }, { username: identifier }],
+    });
   },
 
   // 创建用户
   async create(userData) {
-    const users = this.findAll();
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-    const newUser = {
-      id: uuidv4(),
+    const user = new User({
       username: userData.username,
-      email: userData.email,
+      email: userData.email.toLowerCase(),
       password: hashedPassword,
       isAdmin: userData.isAdmin || false,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    writeData(USERS_FILE, users);
+      isVerified: userData.isVerified || false,
+    });
+    await user.save();
 
     // 创建用户文件夹
-    const userDir = path.join(__dirname, "..", config.uploadPath, newUser.id);
+    const userDir = path.join(
+      __dirname,
+      "..",
+      config.uploadPath,
+      user._id.toString()
+    );
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
     }
 
-    return newUser;
+    return user;
   },
 
-  // 验证密码
+  // 验证密码（用于登录）
   async validatePassword(password, hashedPassword) {
     return await bcrypt.compare(password, hashedPassword);
   },
 
   // 更新用户
-  update(userId, updateData) {
-    const users = this.findAll();
-    const index = users.findIndex((user) => user.id === userId);
-
-    if (index === -1) return null;
-
-    users[index] = { ...users[index], ...updateData };
-    writeData(USERS_FILE, users);
-    return users[index];
+  async update(userId, updateData) {
+    // 如果更新密码，需要hash
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
+    }
+    return await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      select: "-password",
+    });
   },
 
   // 删除用户
-  delete(userId) {
-    const users = this.findAll();
-    const filteredUsers = users.filter((user) => user.id !== userId);
+  async delete(userId) {
+    const result = await User.findByIdAndDelete(userId);
+    return !!result;
+  },
 
-    if (users.length === filteredUsers.length) return false;
-
-    writeData(USERS_FILE, filteredUsers);
-    return true;
+  // 统计用户数量
+  async count() {
+    return await User.countDocuments();
   },
 };
 
-// 文件相关操作
+// ==================== 文件模型 ====================
 const FileModel = {
   // 获取所有文件
-  findAll() {
-    return readData(FILES_FILE);
+  async findAll() {
+    return await File.find()
+      .populate("userId", "username")
+      .sort({ createdAt: -1 });
   },
 
   // 根据ID查找文件
-  findById(fileId) {
-    const files = this.findAll();
-    return files.find((file) => file.id === fileId);
+  async findById(fileId) {
+    return await File.findById(fileId).populate("userId", "username");
   },
 
   // 根据用户ID查找文件
-  findByUserId(userId) {
-    const files = this.findAll();
-    return files.filter((file) => file.userId === userId);
-  },
-
-  // 计算用户已使用的存储空间（字节）
-  getUserStorageUsed(userId) {
-    const files = this.findByUserId(userId);
-    return files.reduce((total, file) => total + (file.size || 0), 0);
+  async findByUserId(userId) {
+    return await File.find({ userId }).sort({ createdAt: -1 });
   },
 
   // 获取公共文件
-  findPublic() {
-    const files = this.findAll();
-    return files.filter((file) => file.isPublic);
+  async findPublic() {
+    return await File.find({ isPublic: true })
+      .populate("userId", "username")
+      .sort({ createdAt: -1 });
   },
 
   // 创建文件记录
-  create(fileData) {
-    const files = this.findAll();
-
-    const newFile = {
-      id: uuidv4(),
+  async create(fileData) {
+    const file = new File({
       userId: fileData.userId,
       filename: fileData.filename,
       originalName: fileData.originalName,
       path: fileData.path,
       size: fileData.size,
       mimetype: fileData.mimetype,
+      category: fileData.category || "其他",
       isPublic: fileData.isPublic || false,
       description: fileData.description || "",
-      category: fileData.category || "other",
-      uploadedAt: new Date().toISOString(),
-    };
-
-    files.push(newFile);
-    writeData(FILES_FILE, files);
-    return newFile;
+    });
+    await file.save();
+    return file;
   },
 
   // 更新文件
-  update(fileId, updateData) {
-    const files = this.findAll();
-    const index = files.findIndex((file) => file.id === fileId);
-
-    if (index === -1) return null;
-
-    files[index] = { ...files[index], ...updateData };
-    writeData(FILES_FILE, files);
-    return files[index];
+  async update(fileId, updateData) {
+    return await File.findByIdAndUpdate(fileId, updateData, { new: true });
   },
 
   // 删除文件记录
-  delete(fileId) {
-    const files = this.findAll();
-    const file = this.findById(fileId);
-
+  async delete(fileId) {
+    const file = await File.findById(fileId);
     if (!file) return false;
 
     // 删除物理文件
@@ -246,244 +175,219 @@ const FileModel = {
       console.error("Error deleting physical file:", error);
     }
 
-    const filteredFiles = files.filter((f) => f.id !== fileId);
-    writeData(FILES_FILE, filteredFiles);
+    await File.findByIdAndDelete(fileId);
     return true;
+  },
+
+  // 计算用户已使用的存储空间（字节）
+  async getUserStorageUsed(userId) {
+    const result = await File.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: null, total: { $sum: "$size" } } },
+    ]);
+    return result.length > 0 ? result[0].total : 0;
+  },
+
+  // 统计文件数量
+  async count() {
+    return await File.countDocuments();
+  },
+
+  // 按分类统计文件数量
+  async countByCategory(userId) {
+    return await File.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: "$category", count: { $sum: 1 } } },
+    ]);
   },
 };
 
-// 验证码相关操作
-const VerificationCodeModel = {
-  // 获取所有验证码
-  findAll() {
-    return readData(VERIFICATION_CODES_FILE);
+// ==================== 评论模型 ====================
+const CommentModel = {
+  // 获取所有评论
+  async findAll() {
+    return await Comment.find()
+      .populate("userId", "username")
+      .populate("fileId", "originalName")
+      .sort({ createdAt: -1 });
   },
 
-  // 保存验证码
-  save(email, code) {
-    const codes = this.findAll();
-    codes[email] = {
-      code: code,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10分钟有效期
-    };
-    writeData(VERIFICATION_CODES_FILE, codes);
+  // 根据ID查找评论
+  async findById(commentId) {
+    return await Comment.findById(commentId)
+      .populate("userId", "username")
+      .populate("fileId", "originalName");
   },
 
-  // 验证验证码
-  verify(email, code) {
-    const codes = this.findAll();
-    const record = codes[email];
+  // 根据文件ID查找评论
+  async findByFileId(fileId) {
+    return await Comment.find({ fileId })
+      .populate("userId", "username")
+      .sort({ createdAt: -1 });
+  },
 
-    if (!record) return false;
+  // 添加评论
+  async add(fileId, userId, username, content) {
+    const comment = new Comment({
+      fileId,
+      userId,
+      content,
+    });
+    await comment.save();
+    return await comment.populate("userId", "username");
+  },
 
-    // 检查是否过期
-    if (new Date(record.expiresAt) < new Date()) {
-      this.delete(email);
+  // 删除评论
+  async delete(commentId, userId, isAdmin = false) {
+    const comment = await Comment.findById(commentId);
+    if (!comment) return false;
+
+    // 管理员可以删除任何评论，普通用户只能删除自己的评论
+    if (!isAdmin && comment.userId.toString() !== userId) {
       return false;
     }
 
-    return record.code === code;
+    await Comment.findByIdAndDelete(commentId);
+    return true;
   },
 
-  // 删除验证码
-  delete(email) {
-    const codes = this.findAll();
-    delete codes[email];
-    writeData(VERIFICATION_CODES_FILE, codes);
+  // 删除文件的所有评论
+  async deleteByFileId(fileId) {
+    const result = await Comment.deleteMany({ fileId });
+    return result.deletedCount;
+  },
+
+  // 统计评论数量
+  async count() {
+    return await Comment.countDocuments();
   },
 };
 
-// 回收站相关操作
+// ==================== 分类模型 ====================
+const CategoryModel = {
+  // 获取所有分类
+  async findAll() {
+    return await Category.find().sort({ createdAt: 1 });
+  },
+
+  // 根据ID查找分类
+  async findById(categoryId) {
+    return await Category.findById(categoryId);
+  },
+
+  // 根据名称查找分类
+  async findByName(name) {
+    return await Category.findOne({ name });
+  },
+};
+
+// ==================== 验证码模型 ====================
+const VerificationCodeModel = {
+  // 保存验证码
+  async save(email, code, expirationMinutes = 10) {
+    // 删除旧的验证码
+    await VerificationCode.deleteMany({ email: email.toLowerCase() });
+
+    // 创建新的验证码
+    const expiresAt = new Date(Date.now() + expirationMinutes * 60 * 1000);
+    const verificationCode = new VerificationCode({
+      email: email.toLowerCase(),
+      code,
+      expiresAt,
+    });
+    await verificationCode.save();
+    return verificationCode;
+  },
+
+  // 验证验证码
+  async verify(email, code) {
+    const record = await VerificationCode.findOne({
+      email: email.toLowerCase(),
+      code,
+      expiresAt: { $gt: new Date() }, // 未过期
+    });
+
+    if (record) {
+      // 验证成功后删除验证码
+      await VerificationCode.deleteOne({ _id: record._id });
+      return true;
+    }
+    return false;
+  },
+
+  // 删除验证码
+  async delete(email) {
+    await VerificationCode.deleteMany({ email: email.toLowerCase() });
+  },
+
+  // 清理过期验证码（MongoDB TTL索引会自动处理，这个方法作为备用）
+  async cleanup() {
+    const result = await VerificationCode.deleteMany({
+      expiresAt: { $lt: new Date() },
+    });
+    return result.deletedCount;
+  },
+
+  // 获取所有验证码（兼容旧代码）
+  async findAll() {
+    const codes = await VerificationCode.find();
+    const result = {};
+    codes.forEach((code) => {
+      result[code.email] = {
+        code: code.code,
+        createdAt: code.createdAt,
+        expiresAt: code.expiresAt,
+      };
+    });
+    return result;
+  },
+};
+
+// ==================== 回收站模型 (暂时保留，后续可考虑用MongoDB实现) ====================
 const TrashModel = {
   // 获取所有回收站文件
   findAll() {
-    return readData(TRASH_FILE);
+    return [];
   },
 
   // 根据用户ID查找回收站文件
   findByUserId(userId) {
-    const trashFiles = this.findAll();
-    return trashFiles.filter((file) => file.userId === userId);
+    return [];
   },
 
   // 根据ID查找回收站文件
   findById(fileId) {
-    const trashFiles = this.findAll();
-    return trashFiles.find((file) => file.id === fileId);
+    return null;
   },
 
   // 添加到回收站
   add(fileData) {
-    const trashFiles = this.findAll();
-    const trashItem = {
-      ...fileData,
-      deletedAt: new Date().toISOString(),
-      expireAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30天后过期
-    };
-    trashFiles.push(trashItem);
-    writeData(TRASH_FILE, trashFiles);
-    return trashItem;
+    return null;
   },
 
   // 从回收站恢复
   restore(fileId) {
-    const trashFiles = this.findAll();
-    const index = trashFiles.findIndex((file) => file.id === fileId);
-
-    if (index === -1) return null;
-
-    const file = trashFiles[index];
-    trashFiles.splice(index, 1);
-    writeData(TRASH_FILE, trashFiles);
-
-    return file;
+    return null;
   },
 
   // 从回收站彻底删除
   permanentDelete(fileId) {
-    const trashFiles = this.findAll();
-    const file = this.findById(fileId);
-
-    if (!file) return false;
-
-    // 删除物理文件
-    try {
-      if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
-      }
-    } catch (error) {
-      console.error("Error deleting physical file:", error);
-    }
-
-    const filteredFiles = trashFiles.filter((f) => f.id !== fileId);
-    writeData(TRASH_FILE, filteredFiles);
-    return true;
+    return false;
   },
 
   // 清理过期文件
   cleanExpired() {
-    const trashFiles = this.findAll();
-    const now = new Date();
-    const validFiles = [];
-    const expiredFiles = [];
-
-    trashFiles.forEach((file) => {
-      if (new Date(file.expireAt) > now) {
-        validFiles.push(file);
-      } else {
-        expiredFiles.push(file);
-        // 删除过期的物理文件
-        try {
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-        } catch (error) {
-          console.error("Error deleting expired file:", error);
-        }
-      }
-    });
-
-    writeData(TRASH_FILE, validFiles);
-    return expiredFiles.length;
+    return 0;
   },
 
   // 清空用户回收站
   emptyByUserId(userId) {
-    const trashFiles = this.findAll();
-    const userFiles = trashFiles.filter((file) => file.userId === userId);
-
-    // 删除物理文件
-    userFiles.forEach((file) => {
-      try {
-        if (fs.existsSync(file.path)) {
-          fs.unlinkSync(file.path);
-        }
-      } catch (error) {
-        console.error("Error deleting file:", error);
-      }
-    });
-
-    const remainingFiles = trashFiles.filter((file) => file.userId !== userId);
-    writeData(TRASH_FILE, remainingFiles);
-    return userFiles.length;
+    return 0;
   },
 };
-
-// 评论模型
-const CommentModel = {
-  // 获取文件的所有评论
-  findByFileId(fileId) {
-    const comments = readData(COMMENTS_FILE);
-    return comments
-      .filter((c) => c.fileId === fileId)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  },
-
-  // 添加评论
-  add(fileId, userId, username, content) {
-    const comments = readData(COMMENTS_FILE);
-    const newComment = {
-      id: uuidv4(),
-      fileId,
-      userId,
-      username,
-      content,
-      createdAt: new Date().toISOString(),
-    };
-    comments.push(newComment);
-    writeData(COMMENTS_FILE, comments);
-    return newComment;
-  },
-
-  // 删除评论
-  delete(commentId, userId, isAdmin = false) {
-    const comments = readData(COMMENTS_FILE);
-    const comment = comments.find((c) => c.id === commentId);
-    if (!comment) {
-      return false;
-    }
-    // 管理员可以删除任何评论，普通用户只能删除自己的评论
-    if (!isAdmin && comment.userId !== userId) {
-      return false;
-    }
-    const filtered = comments.filter((c) => c.id !== commentId);
-    writeData(COMMENTS_FILE, filtered);
-    return true;
-  },
-
-  // 获取所有评论（管理员用）
-  findAll() {
-    return readData(COMMENTS_FILE);
-  },
-
-  // 删除文件的所有评论
-  deleteByFileId(fileId) {
-    const comments = readData(COMMENTS_FILE);
-    const filtered = comments.filter((c) => c.fileId !== fileId);
-    writeData(COMMENTS_FILE, filtered);
-    return true;
-  },
-};
-
-// 分类管理
-const CategoryModel = {
-  // 获取所有分类
-  findAll() {
-    return readData(CATEGORIES_FILE);
-  },
-
-  // 根据ID查找分类
-  findById(categoryId) {
-    const categories = this.findAll();
-    return categories.find((cat) => cat.id === categoryId);
-  },
-};
-
-// 初始化
-initDataFiles();
 
 module.exports = {
+  initializeData,
   UserModel,
   FileModel,
   VerificationCodeModel,

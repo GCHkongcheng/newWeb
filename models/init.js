@@ -4,7 +4,7 @@ const config = require("../config/config");
 // 初始化管理员账号
 async function initAdmin() {
   const adminEmail = config.admin.email;
-  const existingAdmin = UserModel.findByEmail(adminEmail);
+  const existingAdmin = await UserModel.findByEmail(adminEmail);
 
   if (!existingAdmin) {
     try {

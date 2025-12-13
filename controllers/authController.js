@@ -87,14 +87,14 @@ exports.register = async (req, res) => {
     }
 
     // 检查用户名和邮箱是否已存在
-    if (UserModel.findByEmail(email)) {
+    if (await UserModel.findByEmail(email)) {
       return res.render("auth/register", {
         error: "该邮箱已被注册",
         success: null,
       });
     }
 
-    if (UserModel.findByUsername(username)) {
+    if (await UserModel.findByUsername(username)) {
       return res.render("auth/register", {
         error: "该用户名已被使用",
         success: null,
@@ -102,7 +102,7 @@ exports.register = async (req, res) => {
     }
 
     // 验证验证码
-    if (!VerificationCodeModel.verify(email, verificationCode)) {
+    if (!(await VerificationCodeModel.verify(email, verificationCode))) {
       return res.render("auth/register", {
         error: "验证码错误或已过期",
         success: null,
@@ -118,7 +118,7 @@ exports.register = async (req, res) => {
     });
 
     // 删除已使用的验证码
-    VerificationCodeModel.delete(email);
+    await VerificationCodeModel.delete(email);
 
     res.render("auth/register", {
       error: null,
@@ -145,7 +145,7 @@ exports.login = async (req, res) => {
     }
 
     // 查找用户
-    const user = UserModel.findByEmailOrUsername(identifier);
+    const user = await UserModel.findByEmailOrUsername(identifier);
 
     if (!user) {
       return res.render("auth/login", {
@@ -166,7 +166,7 @@ exports.login = async (req, res) => {
     }
 
     // 设置 session
-    req.session.userId = user.id;
+    req.session.userId = user._id.toString();
     req.session.username = user.username;
     req.session.email = user.email;
     req.session.isAdmin = user.isAdmin;

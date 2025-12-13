@@ -4,7 +4,7 @@ const { CommentModel, FileModel, UserModel } = require("../models/dataStore");
 exports.showComments = async (req, res) => {
   try {
     const fileId = req.params.id;
-    const file = FileModel.findById(fileId);
+    const file = await FileModel.findById(fileId);
 
     if (!file) {
       return res.status(404).render("error", {
@@ -34,10 +34,10 @@ exports.showComments = async (req, res) => {
     }
 
     // 获取评论
-    const comments = CommentModel.findByFileId(fileId);
+    const comments = await CommentModel.findByFileId(fileId);
 
     // 获取上传者信息
-    const uploader = UserModel.findById(file.userId);
+    const uploader = await UserModel.findById(file.userId);
 
     res.render("comments/index", {
       user: req.session.userId
@@ -76,7 +76,7 @@ exports.addComment = async (req, res) => {
       return res.json({ success: false, message: "评论内容不能为空" });
     }
 
-    const file = FileModel.findById(fileId);
+    const file = await FileModel.findById(fileId);
 
     if (!file) {
       return res.json({ success: false, message: "文件不存在" });
@@ -87,7 +87,7 @@ exports.addComment = async (req, res) => {
       return res.json({ success: false, message: "只能对公共文件进行评论" });
     }
 
-    const comment = CommentModel.add(
+    const comment = await CommentModel.add(
       fileId,
       req.session.userId,
       req.session.username,
@@ -108,7 +108,7 @@ exports.deleteComment = async (req, res) => {
     const userId = req.session.userId;
     const isAdmin = req.session.isAdmin || false;
 
-    const deleted = CommentModel.delete(commentId, userId, isAdmin);
+    const deleted = await CommentModel.delete(commentId, userId, isAdmin);
 
     if (deleted) {
       res.json({ success: true, message: "评论已删除" });
