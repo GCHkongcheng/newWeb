@@ -3,20 +3,26 @@ const fs = require("fs");
 const path = require("path");
 const iconv = require("iconv-lite");
 const jschardet = require("jschardet");
+const {
+  StorageExceededError,
+  ValidationError,
+  NotFoundError,
+  ForbiddenError,
+} = require("../middlewares/errorHandler");
 
 // 显示文件列表页面
-exports.showFiles = async (req, res) => {
+exports.showFiles = async (req, res, next) => {
   try {
     const userId = req.session.userId;
     const files = await FileModel.findByUserId(userId);
     const categories = await CategoryModel.findAll();
 
     // 为文件添加 id 字段（兼容视图）
-    const filesWithId = files.map(file => {
+    const filesWithId = files.map((file) => {
       const fileObj = file.toObject ? file.toObject() : file;
       return {
         ...fileObj,
-        id: fileObj._id.toString()
+        id: fileObj._id.toString(),
       };
     });
 
@@ -26,7 +32,7 @@ exports.showFiles = async (req, res) => {
     const storagePercent = ((usedStorage / maxStorage) * 100).toFixed(1);
 
     res.render("files/index", {
-      user: { username: req.session.username },
+      user: req.user,
       files: filesWithId,
       categories: categories,
       usedStorage: usedStorage,
@@ -36,20 +42,15 @@ exports.showFiles = async (req, res) => {
       success: null,
     });
   } catch (error) {
-    console.error("获取文件列表错误:", error);
-    res.render("error", {
-      message: "获取文件列表失败",
-      error: error,
-      user: { username: req.session.username },
-    });
+    next(error);
   }
 };
 
 // 上传文件
-exports.uploadFile = async (req, res) => {
+exports.uploadFile = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "没有上传文件" });
+      throw new ValidationError("没有上传文件");
     }
 
     const userId = req.session.userId;
@@ -65,16 +66,7 @@ exports.uploadFile = async (req, res) => {
     if (usedStorage + fileSize > maxStorage) {
       // 删除已上传的文件
       fs.unlinkSync(req.file.path);
-      return res.status(400).json({
-        success: false,
-        message: `存储空间不足！当前已使用 ${(
-          usedStorage /
-          1024 /
-          1024
-        ).toFixed(2)}MB，该文件大小 ${(fileSize / 1024 / 1024).toFixed(
-          2
-        )}MB，总容量 500MB`,
-      });
+      throw new StorageExceededError(usedStorage, fileSize, maxStorage);
     }
 
     // 创建文件记录
@@ -96,11 +88,7 @@ exports.uploadFile = async (req, res) => {
       file: fileRecord,
     });
   } catch (error) {
-    console.error("上传文件错误:", error);
-    res.status(500).json({
-      success: false,
-      message: "文件上传失败: " + error.message,
-    });
+    next(error);
   }
 };
 
@@ -228,17 +216,13 @@ exports.createFile = async (req, res) => {
 };
 
 // 查看文件内容
-exports.viewFile = async (req, res) => {
+exports.viewFile = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const file = await FileModel.findById(fileId);
 
     if (!file) {
-      return res.status(404).render("error", {
-        message: "文件不存在",
-        error: { status: 404 },
-        user: { username: req.session.username },
-      });
+      throw new NotFoundError("文件不存在");
     }
 
     // 检查权限（私有文件只能所有者查看）
@@ -252,11 +236,7 @@ exports.viewFile = async (req, res) => {
       fileOwnerId !== req.session.userId &&
       !req.session.isAdmin
     ) {
-      return res.status(403).render("error", {
-        message: "无权访问此文件",
-        error: { status: 403 },
-        user: { username: req.session.username },
-      });
+      throw new ForbiddenError("无权访问此文件");
     }
 
     // 检查是否为图片文件
@@ -312,29 +292,24 @@ exports.viewFile = async (req, res) => {
     const uploader = await UserModel.findById(file.userId);
 
     res.render("files/view", {
-      user: { username: req.session.username },
+      user: req.user,
       file: file,
       content: content,
       uploader: uploader,
     });
   } catch (error) {
-    console.error("查看文件错误:", error);
-    res.render("error", {
-      message: "无法读取文件",
-      error: error,
-      user: { username: req.session.username },
-    });
+    next(error);
   }
 };
 
 // 下载文件
-exports.downloadFile = async (req, res) => {
+exports.downloadFile = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const file = await FileModel.findById(fileId);
 
     if (!file) {
-      return res.status(404).send("文件不存在");
+      throw new NotFoundError("文件不存在");
     }
 
     // 检查权限
@@ -348,24 +323,23 @@ exports.downloadFile = async (req, res) => {
       fileOwnerId !== req.session.userId &&
       !req.session.isAdmin
     ) {
-      return res.status(403).send("无权访问此文件");
+      throw new ForbiddenError("无权访问此文件");
     }
 
     res.download(file.path, file.originalName);
   } catch (error) {
-    console.error("下载文件错误:", error);
-    res.status(500).send("下载失败");
+    next(error);
   }
 };
 
 // 删除文件（直接删除）
-exports.deleteFile = async (req, res) => {
+exports.deleteFile = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const file = await FileModel.findById(fileId);
 
     if (!file) {
-      return res.json({ success: false, message: "文件不存在" });
+      throw new NotFoundError("文件不存在");
     }
 
     // 检查权限（只有所有者或管理员可以删除）
@@ -375,11 +349,10 @@ exports.deleteFile = async (req, res) => {
       : file.userId.toString();
 
     if (fileOwnerId !== req.session.userId && !req.session.isAdmin) {
-      return res.json({ success: false, message: "无权删除此文件" });
+      throw new ForbiddenError("无权删除此文件");
     }
 
     // 删除物理文件
-    const fs = require("fs");
     if (fs.existsSync(file.path)) {
       fs.unlinkSync(file.path);
     }
@@ -389,38 +362,31 @@ exports.deleteFile = async (req, res) => {
 
     res.json({ success: true, message: "文件已删除" });
   } catch (error) {
-    console.error("删除文件错误:", error);
-    res.json({ success: false, message: "删除失败: " + error.message });
+    next(error);
   }
 };
 
 // 重命名文件
-exports.renameFile = async (req, res) => {
+exports.renameFile = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const { newName } = req.body;
     const userId = req.session.userId;
 
+    // 验证文件名
     if (!newName || !newName.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "新文件名不能为空",
-      });
+      throw new ValidationError("新文件名不能为空");
     }
 
-    // 验证文件名字符
     const invalidChars = /[\/\\:*?"<>|]/;
     if (invalidChars.test(newName)) {
-      return res.status(400).json({
-        success: false,
-        message: '文件名不能包含以下字符: / \\ : * ? " < > |',
-      });
+      throw new ValidationError('文件名不能包含以下字符: / \\ : * ? " < > |');
     }
 
     // 查找文件
     const file = await FileModel.findById(fileId);
     if (!file) {
-      return res.status(404).json({ success: false, message: "文件不存在" });
+      throw new NotFoundError("文件不存在");
     }
 
     // 检查权限
@@ -429,9 +395,7 @@ exports.renameFile = async (req, res) => {
       : file.userId.toString();
 
     if (fileOwnerId !== userId && !req.session.isAdmin) {
-      return res
-        .status(403)
-        .json({ success: false, message: "无权修改此文件" });
+      throw new ForbiddenError("无权修改此文件");
     }
 
     // 更新文件记录中的 originalName
@@ -442,41 +406,31 @@ exports.renameFile = async (req, res) => {
       message: "文件重命名成功",
     });
   } catch (error) {
-    console.error("重命名文件错误:", error);
-    res.status(500).json({
-      success: false,
-      message: "重命名失败: " + error.message,
-    });
+    next(error);
   }
 };
 
 // 移动文件（更改分类）
-exports.moveFile = async (req, res) => {
+exports.moveFile = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const { category } = req.body;
     const userId = req.session.userId;
 
     if (!category) {
-      return res.status(400).json({
-        success: false,
-        message: "请选择目标分类",
-      });
+      throw new ValidationError("请选择目标分类");
     }
 
     // 验证分类是否有效
     const validCategories = ["code", "memo", "image", "other"];
     if (!validCategories.includes(category)) {
-      return res.status(400).json({
-        success: false,
-        message: "无效的分类",
-      });
+      throw new ValidationError("无效的分类");
     }
 
     // 查找文件
     const file = await FileModel.findById(fileId);
     if (!file) {
-      return res.status(404).json({ success: false, message: "文件不存在" });
+      throw new NotFoundError("文件不存在");
     }
 
     // 检查权限
@@ -485,9 +439,7 @@ exports.moveFile = async (req, res) => {
       : file.userId.toString();
 
     if (fileOwnerId !== userId && !req.session.isAdmin) {
-      return res
-        .status(403)
-        .json({ success: false, message: "无权移动此文件" });
+      throw new ForbiddenError("无权移动此文件");
     }
 
     // 更新文件分类
@@ -498,11 +450,7 @@ exports.moveFile = async (req, res) => {
       message: "文件移动成功",
     });
   } catch (error) {
-    console.error("移动文件错误:", error);
-    res.status(500).json({
-      success: false,
-      message: "移动失败: " + error.message,
-    });
+    next(error);
   }
 };
 
@@ -551,23 +499,20 @@ exports.updateFileCategory = async (req, res) => {
 };
 
 // 更改文件权限
-exports.changePermission = async (req, res) => {
+exports.changePermission = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const { isPublic } = req.body;
     const userId = req.session.userId;
 
     if (typeof isPublic !== "boolean") {
-      return res.status(400).json({
-        success: false,
-        message: "权限参数无效",
-      });
+      throw new ValidationError("权限参数无效");
     }
 
     // 查找文件
     const file = await FileModel.findById(fileId);
     if (!file) {
-      return res.status(404).json({ success: false, message: "文件不存在" });
+      throw new NotFoundError("文件不存在");
     }
 
     // 检查权限
@@ -576,9 +521,7 @@ exports.changePermission = async (req, res) => {
       : file.userId.toString();
 
     if (fileOwnerId !== userId && !req.session.isAdmin) {
-      return res
-        .status(403)
-        .json({ success: false, message: "无权修改此文件" });
+      throw new ForbiddenError("无权修改此文件");
     }
 
     // 更新文件权限
@@ -589,10 +532,6 @@ exports.changePermission = async (req, res) => {
       message: `文件已设为${isPublic ? "公开" : "私有"}`,
     });
   } catch (error) {
-    console.error("更改文件权限错误:", error);
-    res.status(500).json({
-      success: false,
-      message: "权限更改失败: " + error.message,
-    });
+    next(error);
   }
 };

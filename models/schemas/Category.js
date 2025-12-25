@@ -22,7 +22,4 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
-// 索引
-categorySchema.index({ name: 1 });
-
 module.exports = mongoose.model("Category", categorySchema);

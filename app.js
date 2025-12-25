@@ -1,10 +1,16 @@
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
+const MongoStore = require("connect-mongo").default;
 const config = require("./config/config");
 const { initAdmin } = require("./models/init");
 const connectDB = require("./config/database");
 const { initializeData } = require("./models/dataStore");
+const { getUserFromSession } = require("./middlewares/userContext");
+const { errorHandler } = require("./middlewares/errorHandler");
 
 const app = express();
 
@@ -15,6 +21,44 @@ connectDB().then(async () => {
   // 初始化管理员账户
   await initAdmin();
 });
+
+// 安全配置
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "cdn.tailwindcss.com",
+          "cdn.jsdelivr.net",
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "cdn.jsdelivr.net",
+          "cdn.bootcdn.net",
+        ],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", "cdn.jsdelivr.net", "cdn.bootcdn.net"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: null,
+      },
+    },
+  })
+);
+
+// 性能优化
+app.use(compression());
+
+// 日志记录
+if (process.env.NODE_ENV === "development") {
+  app.use(morgan("dev"));
+} else {
+  app.use(morgan("combined"));
+}
 
 // 中间件配置
 app.use(express.json());
@@ -27,11 +71,23 @@ app.use(
     secret: config.sessionSecret,
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl:
+        process.env.MONGODB_URI || "mongodb://localhost:27017/personal_cloud",
+      ttl: 24 * 60 * 60, // 1天
+    }),
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24小时
+      httpOnly: true,
+      // 注意：生产环境如果使用 HTTPS，请设置 secure: true
+      secure:
+        process.env.NODE_ENV === "production" && process.env.HTTPS === "true",
     },
   })
 );
+
+// 用户上下文中间件（在所有路由之前）
+app.use(getUserFromSession);
 
 // 视图引擎配置
 app.set("view engine", "ejs");
@@ -69,26 +125,16 @@ app.use((req, res) => {
   res.status(404).render("error", {
     message: "页面不存在",
     error: { status: 404 },
-    user: req.session.userId ? { username: req.session.username } : null,
+    user: req.user || null,
   });
 });
 
-// 错误处理
-app.use((err, req, res, next) => {
-  console.error("应用错误:", err);
-  res.status(err.status || 500).render("error", {
-    message: err.message || "服务器错误",
-    error: err,
-    user: req.session.userId ? { username: req.session.username } : null,
-  });
-});
+// 统一错误处理中间件
+app.use(errorHandler);
 
 // 启动服务器
 async function start() {
   try {
-    // 初始化管理员账号
-    await initAdmin();
-
     const PORT = config.port;
     const HOST = config.host;
     app.listen(PORT, HOST, () => {

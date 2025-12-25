@@ -1,7 +1,7 @@
 const { FileModel, UserModel } = require("../models/dataStore");
 
 // 显示公共资源页面
-exports.showPublic = async (req, res) => {
+exports.showPublic = async (req, res, next) => {
   try {
     const publicFiles = await FileModel.findPublic();
 
@@ -19,15 +19,10 @@ exports.showPublic = async (req, res) => {
     );
 
     res.render("public/index", {
-      user: { username: req.session.username },
+      user: req.user,
       files: filesWithUploader,
     });
   } catch (error) {
-    console.error("获取公共文件列表错误:", error);
-    res.render("error", {
-      message: "获取公共文件列表失败",
-      error: error,
-      user: { username: req.session.username },
-    });
+    next(error);
   }
 };

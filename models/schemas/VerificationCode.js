@@ -7,7 +7,6 @@ const verificationCodeSchema = new mongoose.Schema(
       required: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     code: {
       type: String,
@@ -16,13 +15,15 @@ const verificationCodeSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: true, // 方便清理过期验证码
     },
   },
   {
     timestamps: true,
   }
 );
+
+// 为 email 添加索引以便快速查找
+verificationCodeSchema.index({ email: 1 });
 
 // TTL索引 - MongoDB会自动删除过期文档
 verificationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

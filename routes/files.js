@@ -2,6 +2,12 @@ const express = require("express");
 const router = express.Router();
 const fileController = require("../controllers/fileController");
 const { requireAuth } = require("../middlewares/auth");
+const {
+  validateFileUpload,
+  validateRenameFile,
+  validateMoveFile,
+  validateChangePermission,
+} = require("../middlewares/validation");
 const upload = require("../utils/upload");
 
 // 所有文件路由都需要登录
@@ -11,7 +17,12 @@ router.use(requireAuth);
 router.get("/", fileController.showFiles);
 
 // 上传文件
-router.post("/upload", upload.single("file"), fileController.uploadFile);
+router.post(
+  "/upload",
+  upload.single("file"),
+  validateFileUpload,
+  fileController.uploadFile
+);
 
 // 创建文件
 router.post("/create", fileController.createFile);
@@ -23,13 +34,17 @@ router.get("/view/:id", fileController.viewFile);
 router.get("/download/:id", fileController.downloadFile);
 
 // 重命名文件
-router.put("/:id/rename", fileController.renameFile);
+router.put("/:id/rename", validateRenameFile, fileController.renameFile);
 
 // 移动文件（更改分类）
-router.put("/:id/move", fileController.moveFile);
+router.put("/:id/move", validateMoveFile, fileController.moveFile);
 
 // 更改文件权限
-router.put("/:id/permission", fileController.changePermission);
+router.put(
+  "/:id/permission",
+  validateChangePermission,
+  fileController.changePermission
+);
 
 // 删除文件
 router.delete("/:id", fileController.deleteFile);

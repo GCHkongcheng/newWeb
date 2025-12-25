@@ -1,36 +1,23 @@
 const { CommentModel, FileModel, UserModel } = require("../models/dataStore");
+const {
+  NotFoundError,
+  ForbiddenError,
+  ValidationError,
+} = require("../middlewares/errorHandler");
 
 // 显示文件评论页面
-exports.showComments = async (req, res) => {
+exports.showComments = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const file = await FileModel.findById(fileId);
 
     if (!file) {
-      return res.status(404).render("error", {
-        message: "文件不存在",
-        error: { status: 404 },
-        user: req.session.userId
-          ? {
-              username: req.session.username,
-              isAdmin: req.session.isAdmin || false,
-            }
-          : null,
-      });
+      throw new NotFoundError("文件不存在");
     }
 
     // 只有公共文件才能评论
     if (!file.isPublic) {
-      return res.status(403).render("error", {
-        message: "只能对公共文件进行评论",
-        error: { status: 403 },
-        user: req.session.userId
-          ? {
-              username: req.session.username,
-              isAdmin: req.session.isAdmin || false,
-            }
-          : null,
-      });
+      throw new ForbiddenError("只能对公共文件进行评论");
     }
 
     // 获取评论
@@ -40,51 +27,35 @@ exports.showComments = async (req, res) => {
     const uploader = await UserModel.findById(file.userId);
 
     res.render("comments/index", {
-      user: req.session.userId
-        ? {
-            username: req.session.username,
-            userId: req.session.userId,
-            isAdmin: req.session.isAdmin || false,
-          }
-        : null,
+      user: req.user,
       file,
       uploader,
       comments,
     });
   } catch (error) {
-    console.error("显示评论错误:", error);
-    res.status(500).render("error", {
-      message: "加载评论失败",
-      error: error,
-      user: req.session.userId
-        ? {
-            username: req.session.username,
-            isAdmin: req.session.isAdmin || false,
-          }
-        : null,
-    });
+    next(error);
   }
 };
 
 // 添加评论
-exports.addComment = async (req, res) => {
+exports.addComment = async (req, res, next) => {
   try {
     const fileId = req.params.id;
     const { content } = req.body;
 
     if (!content || content.trim() === "") {
-      return res.json({ success: false, message: "评论内容不能为空" });
+      throw new ValidationError("评论内容不能为空");
     }
 
     const file = await FileModel.findById(fileId);
 
     if (!file) {
-      return res.json({ success: false, message: "文件不存在" });
+      throw new NotFoundError("文件不存在");
     }
 
     // 只有公共文件才能评论
     if (!file.isPublic) {
-      return res.json({ success: false, message: "只能对公共文件进行评论" });
+      throw new ForbiddenError("只能对公共文件进行评论");
     }
 
     const comment = await CommentModel.add(
@@ -96,13 +67,12 @@ exports.addComment = async (req, res) => {
 
     res.json({ success: true, message: "评论成功", comment });
   } catch (error) {
-    console.error("添加评论错误:", error);
-    res.json({ success: false, message: "评论失败: " + error.message });
+    next(error);
   }
 };
 
 // 删除评论
-exports.deleteComment = async (req, res) => {
+exports.deleteComment = async (req, res, next) => {
   try {
     const commentId = req.params.commentId;
     const userId = req.session.userId;
@@ -116,7 +86,6 @@ exports.deleteComment = async (req, res) => {
       res.json({ success: false, message: "删除失败，无权限或评论不存在" });
     }
   } catch (error) {
-    console.error("删除评论错误:", error);
-    res.json({ success: false, message: "删除失败: " + error.message });
+    next(error);
   }
 };

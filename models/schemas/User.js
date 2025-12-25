@@ -37,8 +37,4 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// 索引优化
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
-
 module.exports = mongoose.model("User", userSchema);
