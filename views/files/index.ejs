@@ -40,6 +40,13 @@
         <i class="bi bi-search absolute left-3 top-3 text-gray-400"></i>
       </div>
       <button
+        onclick="document.getElementById('createFileModal').classList.remove('hidden')"
+        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
+      >
+        <i class="bi bi-file-earmark-plus"></i>
+        <span>创建文件</span>
+      </button>
+      <button
         onclick="document.getElementById('uploadModal').classList.remove('hidden')"
         class="bg-primary hover:bg-secondary text-white px-6 py-2 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl"
       >
@@ -136,7 +143,7 @@
       <% } else { %>
       <!-- Desktop Table View -->
       <div
-        class="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden"
+        class="hidden lg:block bg-white rounded-xl shadow-md overflow-visible"
       >
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
@@ -203,7 +210,7 @@
                 >
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+                <%= new Date(file.createdAt).toLocaleString('zh-CN') %>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <% if (file.isPublic) { %>
@@ -220,27 +227,82 @@
                 </span>
                 <% } %>
               </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
-              >
-                <a
-                  href="/files/view/<%= file.id %>"
-                  class="text-primary hover:text-secondary transition-colors"
-                >
-                  <i class="bi bi-eye"></i>
-                </a>
-                <a
-                  href="/files/download/<%= file.id %>"
-                  class="text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  <i class="bi bi-download"></i>
-                </a>
-                <button
-                  onclick="deleteFile('<%= file.id %>')"
-                  class="text-red-600 hover:text-red-800 transition-colors"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="/files/view/<%= file.id %>"
+                    class="text-primary hover:text-secondary transition-colors"
+                    title="查看"
+                  >
+                    <i class="bi bi-eye text-lg"></i>
+                  </a>
+                  <a
+                    href="/files/download/<%= file.id %>"
+                    class="text-blue-600 hover:text-blue-800 transition-colors"
+                    title="下载"
+                  >
+                    <i class="bi bi-download text-lg"></i>
+                  </a>
+                  <!-- 更多菜单 -->
+                  <div
+                    class="relative inline-block text-left dropdown-container"
+                    x-data="{ open: false }"
+                  >
+                    <button
+                      @click="open = !open"
+                      @click.away="open = false"
+                      class="text-gray-600 hover:text-gray-900 transition-colors"
+                      title="更多操作"
+                    >
+                      <i class="bi bi-three-dots-vertical text-lg"></i>
+                    </button>
+                    <div
+                      x-show="open"
+                      x-transition:enter="transition ease-out duration-100"
+                      x-transition:enter-start="transform opacity-0 scale-95"
+                      x-transition:enter-end="transform opacity-100 scale-100"
+                      x-transition:leave="transition ease-in duration-75"
+                      x-transition:leave-start="transform opacity-100 scale-100"
+                      x-transition:leave-end="transform opacity-0 scale-95"
+                      class="origin-top-right absolute right-0 mt-2 w-48 rounded-lg shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50"
+                      style="display: none"
+                    >
+                      <div class="py-1">
+                        <button
+                          onclick="openRenameModal('<%= file.id %>', '<%= file.originalName %>')"
+                          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center"
+                        >
+                          <i class="bi bi-pencil mr-3 text-blue-600"></i>
+                          重命名
+                        </button>
+                        <button
+                          onclick="openMoveModal('<%= file.id %>', '<%= file.originalName %>', '<%= file.category %>')"
+                          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center"
+                        >
+                          <i class="bi bi-folder2-open mr-3 text-green-600"></i>
+                          移动到...
+                        </button>
+                        <button
+                          onclick="openPermissionModal('<%= file.id %>', '<%= file.originalName %>', <%= file.isPublic %>)"
+                          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center"
+                        >
+                          <i
+                            class="bi <%= file.isPublic ? 'bi-lock' : 'bi-globe' %> mr-3 text-orange-600"
+                          ></i>
+                          更改权限
+                        </button>
+                        <hr class="my-1" />
+                        <button
+                          onclick="deleteFile('<%= file.id %>')"
+                          class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center"
+                        >
+                          <i class="bi bi-trash mr-3"></i>
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </td>
             </tr>
             <% }); %>
@@ -290,7 +352,7 @@
             <% } %>
           </div>
           <div class="text-xs text-gray-500 mb-3">
-            <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+            <%= new Date(file.createdAt).toLocaleString('zh-CN') %>
           </div>
           <div class="flex space-x-2">
             <a
@@ -306,10 +368,10 @@
               <i class="bi bi-download mr-1"></i>下载
             </a>
             <button
-              onclick="deleteFile('<%= file.id %>')"
-              class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+              onclick="openMobileMenu('<%= file.id %>', '<%= file.originalName %>', '<%= file.category %>', <%= file.isPublic %>)"
+              class="px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
             >
-              <i class="bi bi-trash"></i>
+              <i class="bi bi-three-dots"></i>
             </button>
           </div>
         </div>
@@ -430,7 +492,861 @@
   </div>
 </div>
 
+<!-- Create File Modal -->
+<div
+  id="createFileModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+>
+  <div
+    class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+  >
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+          <i class="bi bi-file-earmark-plus mr-2 text-green-600"></i>
+          创建文件
+        </h2>
+        <button
+          onclick="document.getElementById('createFileModal').classList.add('hidden')"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <i class="bi bi-x-lg text-2xl"></i>
+        </button>
+      </div>
+
+      <form id="createFileForm" class="space-y-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              文件名 <span class="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="filename"
+              id="createFilename"
+              required
+              placeholder="例如: notes.txt, script.js, README.md"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              oninput="updateFileTypeHint()"
+            />
+            <p class="mt-1 text-xs text-gray-500" id="fileTypeHint">
+              支持的扩展名: .txt, .md, .js, .py, .html, .css, .json, .xml, .sql,
+              .sh, .yaml 等
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              分类
+            </label>
+            <select
+              name="category"
+              id="createCategory"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+            >
+              <option value="code">代码</option>
+              <option value="memo" selected>备忘</option>
+              <option value="image">图片</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="isPublic"
+                id="createIsPublic"
+                class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span class="text-sm font-medium text-gray-700">
+                <i class="bi bi-globe mr-1"></i>设为公开文件
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            描述（可选）
+          </label>
+          <textarea
+            name="description"
+            id="createDescription"
+            rows="2"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+            placeholder="添加文件描述..."
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            文件内容 <span class="text-red-500">*</span>
+          </label>
+          <textarea
+            name="content"
+            id="createContent"
+            required
+            rows="15"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none font-mono text-sm"
+            placeholder="在此输入文件内容..."
+          ></textarea>
+          <p class="mt-1 text-xs text-gray-500">
+            <i class="bi bi-info-circle mr-1"></i>
+            文件大小限制: 5MB
+          </p>
+        </div>
+
+        <div class="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2"
+          >
+            <i class="bi bi-check-circle"></i>
+            <span>创建文件</span>
+          </button>
+          <button
+            type="button"
+            onclick="document.getElementById('createFileModal').classList.add('hidden'); document.getElementById('createFileForm').reset();"
+            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Modal -->
+<div
+  id="renameModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+>
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+          <i class="bi bi-pencil mr-2 text-blue-600"></i>
+          重命名文件
+        </h2>
+        <button
+          onclick="closeRenameModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <i class="bi bi-x-lg text-2xl"></i>
+        </button>
+      </div>
+
+      <form id="renameForm" class="space-y-5">
+        <input type="hidden" id="renameFileId" />
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            新文件名 <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            id="renameFileName"
+            required
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            placeholder="输入新文件名"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            <i class="bi bi-info-circle mr-1"></i>
+            保持原有扩展名以确保文件类型正确
+          </p>
+        </div>
+
+        <div class="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            确认重命名
+          </button>
+          <button
+            type="button"
+            onclick="closeRenameModal()"
+            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Move Modal -->
+<div
+  id="moveModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+>
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+          <i class="bi bi-folder2-open mr-2 text-green-600"></i>
+          移动文件
+        </h2>
+        <button
+          onclick="closeMoveModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <i class="bi bi-x-lg text-2xl"></i>
+        </button>
+      </div>
+
+      <form id="moveForm" class="space-y-5">
+        <input type="hidden" id="moveFileId" />
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            文件：<span
+              id="moveFileName"
+              class="text-gray-900 font-semibold"
+            ></span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            移动到分类 <span class="text-red-500">*</span>
+          </label>
+          <div class="space-y-2">
+            <label
+              class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="radio"
+                name="moveCategory"
+                value="code"
+                class="mr-3 text-green-600"
+              />
+              <i class="bi bi-code-slash mr-2 text-purple-600"></i>
+              <span>代码</span>
+            </label>
+            <label
+              class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="radio"
+                name="moveCategory"
+                value="memo"
+                class="mr-3 text-green-600"
+              />
+              <i class="bi bi-journal-text mr-2 text-blue-600"></i>
+              <span>备忘</span>
+            </label>
+            <label
+              class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="radio"
+                name="moveCategory"
+                value="image"
+                class="mr-3 text-green-600"
+              />
+              <i class="bi bi-image mr-2 text-pink-600"></i>
+              <span>图片</span>
+            </label>
+            <label
+              class="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="radio"
+                name="moveCategory"
+                value="other"
+                class="mr-3 text-green-600"
+              />
+              <i class="bi bi-folder mr-2 text-gray-600"></i>
+              <span>其他</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            确认移动
+          </button>
+          <button
+            type="button"
+            onclick="closeMoveModal()"
+            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Permission Modal -->
+<div
+  id="permissionModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+>
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 flex items-center">
+          <i class="bi bi-shield-lock mr-2 text-orange-600"></i>
+          更改文件权限
+        </h2>
+        <button
+          onclick="closePermissionModal()"
+          class="text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <i class="bi bi-x-lg text-2xl"></i>
+        </button>
+      </div>
+
+      <form id="permissionForm" class="space-y-5">
+        <input type="hidden" id="permissionFileId" />
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            文件：<span
+              id="permissionFileName"
+              class="text-gray-900 font-semibold"
+            ></span>
+          </label>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p class="text-sm text-gray-600 mb-3">
+            <i class="bi bi-info-circle mr-1"></i>
+            选择文件的访问权限
+          </p>
+          <div class="space-y-3">
+            <label
+              class="flex items-start p-3 border-2 border-gray-300 rounded-lg hover:bg-white cursor-pointer transition-colors permission-option"
+            >
+              <input
+                type="radio"
+                name="permission"
+                value="false"
+                class="mt-1 mr-3 text-orange-600"
+              />
+              <div>
+                <div class="flex items-center mb-1">
+                  <i class="bi bi-lock mr-2 text-gray-700"></i>
+                  <span class="font-semibold text-gray-900">私有</span>
+                </div>
+                <p class="text-xs text-gray-500">只有您可以查看和访问此文件</p>
+              </div>
+            </label>
+            <label
+              class="flex items-start p-3 border-2 border-gray-300 rounded-lg hover:bg-white cursor-pointer transition-colors permission-option"
+            >
+              <input
+                type="radio"
+                name="permission"
+                value="true"
+                class="mt-1 mr-3 text-orange-600"
+              />
+              <div>
+                <div class="flex items-center mb-1">
+                  <i class="bi bi-globe mr-2 text-green-700"></i>
+                  <span class="font-semibold text-gray-900">公开</span>
+                </div>
+                <p class="text-xs text-gray-500">所有人都可以查看此文件</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex space-x-3 pt-4">
+          <button
+            type="submit"
+            class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            确认更改
+          </button>
+          <button
+            type="button"
+            onclick="closePermissionModal()"
+            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-lg font-medium transition-all duration-200"
+          >
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Menu Modal -->
+<div
+  id="mobileMenuModal"
+  class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end"
+>
+  <div class="bg-white rounded-t-3xl w-full p-6 animate-slide-up">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold text-gray-900">文件操作</h3>
+      <button
+        onclick="closeMobileMenu()"
+        class="text-gray-400 hover:text-gray-600"
+      >
+        <i class="bi bi-x-lg text-xl"></i>
+      </button>
+    </div>
+    <input type="hidden" id="mobileMenuFileId" />
+    <input type="hidden" id="mobileMenuFileName" />
+    <input type="hidden" id="mobileMenuFileCategory" />
+    <input type="hidden" id="mobileMenuFileIsPublic" />
+    <div class="space-y-2">
+      <button
+        onclick="openRenameModalFromMobile()"
+        class="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
+      >
+        <i class="bi bi-pencil mr-3 text-blue-600 text-xl"></i>
+        <span>重命名</span>
+      </button>
+      <button
+        onclick="openMoveModalFromMobile()"
+        class="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
+      >
+        <i class="bi bi-folder2-open mr-3 text-green-600 text-xl"></i>
+        <span>移动到...</span>
+      </button>
+      <button
+        onclick="openPermissionModalFromMobile()"
+        class="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center"
+      >
+        <i class="bi bi-shield-lock mr-3 text-orange-600 text-xl"></i>
+        <span>更改权限</span>
+      </button>
+      <hr class="my-2" />
+      <button
+        onclick="deleteFileFromMobile()"
+        class="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center"
+      >
+        <i class="bi bi-trash mr-3 text-xl"></i>
+        <span>删除</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
+  // ========== 重命名功能 ==========
+  function openRenameModal(fileId, fileName) {
+    document.getElementById("renameFileId").value = fileId;
+    document.getElementById("renameFileName").value = fileName;
+    document.getElementById("renameModal").classList.remove("hidden");
+  }
+
+  function closeRenameModal() {
+    document.getElementById("renameModal").classList.add("hidden");
+    document.getElementById("renameForm").reset();
+  }
+
+  document
+    .getElementById("renameForm")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fileId = document.getElementById("renameFileId").value;
+      const newName = document.getElementById("renameFileName").value.trim();
+
+      if (!newName) {
+        alert("文件名不能为空");
+        return;
+      }
+
+      // 验证文件名字符
+      const invalidChars = /[\/\\:*?"<>|]/;
+      if (invalidChars.test(newName)) {
+        alert('文件名不能包含以下字符: / \\ : * ? " < > |');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/files/${fileId}/rename`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ newName }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert("重命名成功！");
+          location.reload();
+        } else {
+          alert("重命名失败: " + result.message);
+        }
+      } catch (error) {
+        console.error("重命名错误:", error);
+        alert("重命名失败，请稍后重试");
+      }
+    });
+
+  // ========== 移动功能 ==========
+  function openMoveModal(fileId, fileName, currentCategory) {
+    document.getElementById("moveFileId").value = fileId;
+    document.getElementById("moveFileName").textContent = fileName;
+
+    // 选中当前分类
+    const radios = document.getElementsByName("moveCategory");
+    radios.forEach((radio) => {
+      if (radio.value === currentCategory) {
+        radio.checked = true;
+      }
+    });
+
+    document.getElementById("moveModal").classList.remove("hidden");
+  }
+
+  function closeMoveModal() {
+    document.getElementById("moveModal").classList.add("hidden");
+    document.getElementById("moveForm").reset();
+  }
+
+  document.getElementById("moveForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const fileId = document.getElementById("moveFileId").value;
+    const selectedCategory = document.querySelector(
+      'input[name="moveCategory"]:checked'
+    );
+
+    if (!selectedCategory) {
+      alert("请选择目标分类");
+      return;
+    }
+
+    const newCategory = selectedCategory.value;
+
+    try {
+      const response = await fetch(`/files/${fileId}/move`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: newCategory }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("移动成功！");
+        location.reload();
+      } else {
+        alert("移动失败: " + result.message);
+      }
+    } catch (error) {
+      console.error("移动错误:", error);
+      alert("移动失败，请稍后重试");
+    }
+  });
+
+  // ========== 更改权限功能 ==========
+  function openPermissionModal(fileId, fileName, isPublic) {
+    document.getElementById("permissionFileId").value = fileId;
+    document.getElementById("permissionFileName").textContent = fileName;
+
+    // 选中当前权限状态
+    const radios = document.getElementsByName("permission");
+    radios.forEach((radio) => {
+      if (radio.value === isPublic.toString()) {
+        radio.checked = true;
+        // 高亮选中的选项
+        radio
+          .closest(".permission-option")
+          .classList.add("border-orange-500", "bg-orange-50");
+      } else {
+        radio
+          .closest(".permission-option")
+          .classList.remove("border-orange-500", "bg-orange-50");
+      }
+    });
+
+    // 添加选项切换效果
+    radios.forEach((radio) => {
+      radio.addEventListener("change", function () {
+        radios.forEach((r) => {
+          if (r.checked) {
+            r.closest(".permission-option").classList.add(
+              "border-orange-500",
+              "bg-orange-50"
+            );
+          } else {
+            r.closest(".permission-option").classList.remove(
+              "border-orange-500",
+              "bg-orange-50"
+            );
+          }
+        });
+      });
+    });
+
+    document.getElementById("permissionModal").classList.remove("hidden");
+  }
+
+  function closePermissionModal() {
+    document.getElementById("permissionModal").classList.add("hidden");
+    document.getElementById("permissionForm").reset();
+  }
+
+  document
+    .getElementById("permissionForm")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const fileId = document.getElementById("permissionFileId").value;
+      const selectedPermission = document.querySelector(
+        'input[name="permission"]:checked'
+      );
+
+      if (!selectedPermission) {
+        alert("请选择权限");
+        return;
+      }
+
+      const isPublic = selectedPermission.value === "true";
+
+      try {
+        const response = await fetch(`/files/${fileId}/permission`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPublic }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert("权限更改成功！");
+          location.reload();
+        } else {
+          alert("权限更改失败: " + result.message);
+        }
+      } catch (error) {
+        console.error("更改权限错误:", error);
+        alert("权限更改失败，请稍后重试");
+      }
+    });
+
+  // ========== 移动端菜单 ==========
+  function openMobileMenu(fileId, fileName, category, isPublic) {
+    document.getElementById("mobileMenuFileId").value = fileId;
+    document.getElementById("mobileMenuFileName").value = fileName;
+    document.getElementById("mobileMenuFileCategory").value = category;
+    document.getElementById("mobileMenuFileIsPublic").value = isPublic;
+    document.getElementById("mobileMenuModal").classList.remove("hidden");
+  }
+
+  function closeMobileMenu() {
+    document.getElementById("mobileMenuModal").classList.add("hidden");
+  }
+
+  function openRenameModalFromMobile() {
+    const fileId = document.getElementById("mobileMenuFileId").value;
+    const fileName = document.getElementById("mobileMenuFileName").value;
+    closeMobileMenu();
+    openRenameModal(fileId, fileName);
+  }
+
+  function openMoveModalFromMobile() {
+    const fileId = document.getElementById("mobileMenuFileId").value;
+    const fileName = document.getElementById("mobileMenuFileName").value;
+    const category = document.getElementById("mobileMenuFileCategory").value;
+    closeMobileMenu();
+    openMoveModal(fileId, fileName, category);
+  }
+
+  function openPermissionModalFromMobile() {
+    const fileId = document.getElementById("mobileMenuFileId").value;
+    const fileName = document.getElementById("mobileMenuFileName").value;
+    const isPublic =
+      document.getElementById("mobileMenuFileIsPublic").value === "true";
+    closeMobileMenu();
+    openPermissionModal(fileId, fileName, isPublic);
+  }
+
+  function deleteFileFromMobile() {
+    const fileId = document.getElementById("mobileMenuFileId").value;
+    closeMobileMenu();
+    deleteFile(fileId);
+  }
+
+  // 根据文件名更新文件类型提示
+  function updateFileTypeHint() {
+    const filename = document.getElementById("createFilename").value;
+    const hint = document.getElementById("fileTypeHint");
+    const categorySelect = document.getElementById("createCategory");
+
+    if (filename) {
+      const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+      const mimeTypes = {
+        ".txt": { type: "text/plain", desc: "纯文本文件", category: "memo" },
+        ".md": {
+          type: "text/markdown",
+          desc: "Markdown文档",
+          category: "memo",
+        },
+        ".js": {
+          type: "text/javascript",
+          desc: "JavaScript代码",
+          category: "code",
+        },
+        ".py": { type: "text/x-python", desc: "Python代码", category: "code" },
+        ".html": { type: "text/html", desc: "HTML文档", category: "code" },
+        ".css": { type: "text/css", desc: "CSS样式表", category: "code" },
+        ".json": {
+          type: "application/json",
+          desc: "JSON数据",
+          category: "code",
+        },
+        ".xml": { type: "application/xml", desc: "XML文档", category: "other" },
+        ".sql": { type: "text/x-sql", desc: "SQL脚本", category: "code" },
+        ".sh": { type: "text/x-sh", desc: "Shell脚本", category: "code" },
+        ".yaml": { type: "text/yaml", desc: "YAML配置", category: "other" },
+        ".yml": { type: "text/yaml", desc: "YAML配置", category: "other" },
+        ".java": { type: "text/x-java", desc: "Java代码", category: "code" },
+        ".cpp": { type: "text/x-c++src", desc: "C++代码", category: "code" },
+        ".c": { type: "text/x-c", desc: "C代码", category: "code" },
+        ".php": { type: "text/x-php", desc: "PHP代码", category: "code" },
+        ".rb": { type: "text/x-ruby", desc: "Ruby代码", category: "code" },
+        ".go": { type: "text/x-go", desc: "Go代码", category: "code" },
+        ".rs": { type: "text/x-rustsrc", desc: "Rust代码", category: "code" },
+        ".ts": {
+          type: "text/typescript",
+          desc: "TypeScript代码",
+          category: "code",
+        },
+        ".vue": { type: "text/x-vue", desc: "Vue组件", category: "code" },
+        ".jsx": { type: "text/jsx", desc: "React JSX", category: "code" },
+        ".tsx": { type: "text/tsx", desc: "React TSX", category: "code" },
+      };
+
+      if (mimeTypes[ext]) {
+        hint.innerHTML = `<i class="bi bi-check-circle text-green-600 mr-1"></i>识别为: ${mimeTypes[ext].desc} (${mimeTypes[ext].type})`;
+        hint.classList.remove("text-gray-500");
+        hint.classList.add("text-green-600");
+        categorySelect.value = mimeTypes[ext].category;
+      } else if (ext) {
+        hint.innerHTML = `<i class="bi bi-exclamation-circle text-yellow-600 mr-1"></i>未识别的扩展名，将保存为纯文本文件`;
+        hint.classList.remove("text-gray-500", "text-green-600");
+        hint.classList.add("text-yellow-600");
+      } else {
+        hint.innerHTML =
+          "支持的扩展名: .txt, .md, .js, .py, .html, .css, .json, .xml, .sql, .sh, .yaml 等";
+        hint.classList.remove("text-green-600", "text-yellow-600");
+        hint.classList.add("text-gray-500");
+      }
+    }
+  }
+
+  // 创建文件表单提交
+  document
+    .getElementById("createFileForm")
+    .addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const filename = document.getElementById("createFilename").value.trim();
+      const content = document.getElementById("createContent").value;
+      const category = document.getElementById("createCategory").value;
+      const isPublic = document.getElementById("createIsPublic").checked;
+      const description = document.getElementById("createDescription").value;
+
+      // 验证文件名
+      if (!filename) {
+        alert("请输入文件名");
+        return;
+      }
+
+      // 验证文件名字符
+      const invalidChars = /[\/\\:*?"<>|]/;
+      if (invalidChars.test(filename)) {
+        alert('文件名不能包含以下字符: / \\ : * ? " < > |');
+        return;
+      }
+
+      // 验证内容
+      if (!content.trim()) {
+        alert("文件内容不能为空");
+        return;
+      }
+
+      // 检查内容大小（5MB限制）
+      const contentSize = new Blob([content]).size;
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (contentSize > maxSize) {
+        alert(
+          `文件内容过大！\n当前大小: ${(contentSize / 1024 / 1024).toFixed(
+            2
+          )}MB\n最大允许: 5MB`
+        );
+        return;
+      }
+
+      try {
+        const response = await fetch("/files/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            filename,
+            content,
+            category,
+            isPublic,
+            description,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          alert("文件创建成功！");
+          location.reload();
+        } else {
+          alert("创建失败: " + result.message);
+        }
+      } catch (error) {
+        console.error("创建文件错误:", error);
+        alert("创建失败，请稍后重试");
+      }
+    });
+
+  // ========== 自动调整下拉菜单方向 ==========
+  document.addEventListener("DOMContentLoaded", function () {
+    // 监听所有下拉菜单的打开
+    document.addEventListener("click", function (e) {
+      const button = e.target.closest('[title="更多操作"]');
+      if (button) {
+        setTimeout(() => {
+          const container = button.closest(".dropdown-container");
+          const dropdown = container?.querySelector("div[x-show]");
+
+          if (dropdown && dropdown.style.display !== "none") {
+            const rect = dropdown.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            // 如果下拉菜单底部超出视口，则向上展开
+            if (rect.bottom > windowHeight - 20) {
+              dropdown.style.bottom = "100%";
+              dropdown.style.top = "auto";
+              dropdown.style.marginBottom = "0.5rem";
+              dropdown.style.marginTop = "0";
+              dropdown.classList.remove("origin-top-right");
+              dropdown.classList.add("origin-bottom-right");
+            } else {
+              dropdown.style.bottom = "auto";
+              dropdown.style.top = "100%";
+              dropdown.style.marginTop = "0.5rem";
+              dropdown.style.marginBottom = "0";
+              dropdown.classList.remove("origin-bottom-right");
+              dropdown.classList.add("origin-top-right");
+            }
+          }
+        }, 10);
+      }
+    });
+  });
+
   // 根据文件类型自动设置分类
   function updateCategoryByFileType() {
     const fileInput = document.getElementById("fileInput");

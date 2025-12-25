@@ -9,8 +9,10 @@ exports.showPublic = async (req, res) => {
     const filesWithUploader = await Promise.all(
       publicFiles.map(async (file) => {
         const uploader = await UserModel.findById(file.userId);
+        const fileObj = file.toObject();
         return {
-          ...file.toObject(),
+          ...fileObj,
+          id: fileObj._id.toString(),
           uploaderName: uploader ? uploader.username : "未知用户",
         };
       })

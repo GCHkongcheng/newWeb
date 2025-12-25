@@ -42,9 +42,15 @@ exports.updateUsername = async (req, res) => {
     const { newUsername, password } = req.body;
     const userId = req.session.userId;
 
+    // 查找用户（包含密码字段用于验证）
+    const user = await UserModel.findById(userId, true);
+
+    if (!user) {
+      return res.redirect("/auth/login");
+    }
+
     // 验证输入
     if (!newUsername || !password) {
-      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
           userId: user._id.toString(),
@@ -58,9 +64,8 @@ exports.updateUsername = async (req, res) => {
       });
     }
 
-    // 验证用户名长度
-    if (newUsername.length < 2 || newUsername.length > 20) {
-      const user = await UserModel.findById(userId);
+    // 验证用户名长度（3-30字符，与注册保持一致）
+    if (newUsername.length < 3 || newUsername.length > 30) {
       return res.render("profile/index", {
         user: {
           userId: user._id.toString(),
@@ -70,15 +75,8 @@ exports.updateUsername = async (req, res) => {
           createdAt: user.createdAt,
         },
         success: null,
-        error: "用户名长度应在2-20个字符之间",
+        error: "用户名长度应在3-30个字符之间",
       });
-    }
-
-    // 查找用户
-    const user = await UserModel.findById(userId);
-
-    if (!user) {
-      return res.redirect("/auth/login");
     }
 
     // 验证密码
@@ -155,9 +153,15 @@ exports.updatePassword = async (req, res) => {
     const { currentPassword, newPassword, confirmPassword } = req.body;
     const userId = req.session.userId;
 
+    // 查找用户（包含密码字段用于验证）
+    const user = await UserModel.findById(userId, true);
+
+    if (!user) {
+      return res.redirect("/auth/login");
+    }
+
     // 验证输入
     if (!currentPassword || !newPassword || !confirmPassword) {
-      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
           userId: user._id.toString(),
@@ -173,7 +177,6 @@ exports.updatePassword = async (req, res) => {
 
     // 验证新密码长度
     if (newPassword.length < 6) {
-      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
           userId: user._id.toString(),
@@ -189,7 +192,6 @@ exports.updatePassword = async (req, res) => {
 
     // 验证两次新密码是否一致
     if (newPassword !== confirmPassword) {
-      const user = await UserModel.findById(userId);
       return res.render("profile/index", {
         user: {
           userId: user._id.toString(),
@@ -202,9 +204,6 @@ exports.updatePassword = async (req, res) => {
         error: "两次输入的新密码不一致",
       });
     }
-
-    // 查找用户
-    const user = await UserModel.findById(userId);
 
     if (!user) {
       return res.redirect("/auth/login");

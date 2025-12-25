@@ -11,6 +11,15 @@ exports.showFiles = async (req, res) => {
     const files = await FileModel.findByUserId(userId);
     const categories = await CategoryModel.findAll();
 
+    // 为文件添加 id 字段（兼容视图）
+    const filesWithId = files.map(file => {
+      const fileObj = file.toObject ? file.toObject() : file;
+      return {
+        ...fileObj,
+        id: fileObj._id.toString()
+      };
+    });
+
     // 计算存储空间
     const usedStorage = await FileModel.getUserStorageUsed(userId);
     const maxStorage = 500 * 1024 * 1024; // 500MB
@@ -18,7 +27,7 @@ exports.showFiles = async (req, res) => {
 
     res.render("files/index", {
       user: { username: req.session.username },
-      files: files,
+      files: filesWithId,
       categories: categories,
       usedStorage: usedStorage,
       maxStorage: maxStorage,
@@ -95,6 +104,129 @@ exports.uploadFile = async (req, res) => {
   }
 };
 
+// 创建文件
+exports.createFile = async (req, res) => {
+  try {
+    const userId = req.session.userId;
+    const { filename, content, category, isPublic, description } = req.body;
+
+    // 验证输入
+    if (!filename || !content) {
+      return res.status(400).json({
+        success: false,
+        message: "文件名和内容不能为空",
+      });
+    }
+
+    // 验证文件名字符
+    const invalidChars = /[\/\\:*?"<>|]/;
+    if (invalidChars.test(filename)) {
+      return res.status(400).json({
+        success: false,
+        message: '文件名不能包含以下字符: / \\ : * ? " < > |',
+      });
+    }
+
+    // 检查内容大小（5MB限制）
+    const contentBuffer = Buffer.from(content, "utf8");
+    const contentSize = contentBuffer.length;
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (contentSize > maxSize) {
+      return res.status(400).json({
+        success: false,
+        message: `文件内容过大！当前: ${(contentSize / 1024 / 1024).toFixed(
+          2
+        )}MB，最大: 5MB`,
+      });
+    }
+
+    // 检查用户存储空间
+    const maxStorage = 500 * 1024 * 1024; // 500MB
+    const usedStorage = await FileModel.getUserStorageUsed(userId);
+    if (usedStorage + contentSize > maxStorage) {
+      return res.status(400).json({
+        success: false,
+        message: `存储空间不足！当前已使用 ${(
+          usedStorage /
+          1024 /
+          1024
+        ).toFixed(2)}MB，该文件大小 ${(contentSize / 1024 / 1024).toFixed(
+          2
+        )}MB，总容量 500MB`,
+      });
+    }
+
+    // 确定MIME类型
+    const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
+    const mimeTypes = {
+      ".txt": "text/plain",
+      ".md": "text/markdown",
+      ".js": "text/javascript",
+      ".py": "text/x-python",
+      ".html": "text/html",
+      ".css": "text/css",
+      ".json": "application/json",
+      ".xml": "application/xml",
+      ".sql": "text/x-sql",
+      ".sh": "text/x-sh",
+      ".yaml": "text/yaml",
+      ".yml": "text/yaml",
+      ".java": "text/x-java",
+      ".cpp": "text/x-c++src",
+      ".c": "text/x-c",
+      ".php": "text/x-php",
+      ".rb": "text/x-ruby",
+      ".go": "text/x-go",
+      ".rs": "text/x-rustsrc",
+      ".ts": "text/typescript",
+      ".vue": "text/x-vue",
+      ".jsx": "text/jsx",
+      ".tsx": "text/tsx",
+    };
+    const mimetype = mimeTypes[ext] || "text/plain";
+
+    // 生成唯一文件名
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 1000000);
+    const generatedFilename = `file-${timestamp}-${randomNum}${ext || ".txt"}`;
+
+    // 确保用户目录存在
+    const userDir = path.join(__dirname, "..", "storage", "user_files", userId);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
+    }
+
+    // 保存文件到磁盘
+    const filePath = path.join(userDir, generatedFilename);
+    fs.writeFileSync(filePath, content, "utf8");
+
+    // 创建文件记录
+    const fileRecord = await FileModel.create({
+      userId: userId,
+      filename: generatedFilename,
+      originalName: filename,
+      path: filePath,
+      size: contentSize,
+      mimetype: mimetype,
+      isPublic: isPublic || false,
+      description: description || "",
+      category: category || "other",
+    });
+
+    res.json({
+      success: true,
+      message: "文件创建成功",
+      file: fileRecord,
+    });
+  } catch (error) {
+    console.error("创建文件错误:", error);
+    res.status(500).json({
+      success: false,
+      message: "文件创建失败: " + error.message,
+    });
+  }
+};
+
 // 查看文件内容
 exports.viewFile = async (req, res) => {
   try {
@@ -110,9 +242,14 @@ exports.viewFile = async (req, res) => {
     }
 
     // 检查权限（私有文件只能所有者查看）
+    // file.userId 被 populate 后是对象 {_id, username}
+    const fileOwnerId = file.userId._id
+      ? file.userId._id.toString()
+      : file.userId.toString();
+
     if (
       !file.isPublic &&
-      file.userId !== req.session.userId &&
+      fileOwnerId !== req.session.userId &&
       !req.session.isAdmin
     ) {
       return res.status(403).render("error", {
@@ -201,9 +338,14 @@ exports.downloadFile = async (req, res) => {
     }
 
     // 检查权限
+    // file.userId 被 populate 后是对象 {_id, username}
+    const fileOwnerId = file.userId._id
+      ? file.userId._id.toString()
+      : file.userId.toString();
+
     if (
       !file.isPublic &&
-      file.userId !== req.session.userId &&
+      fileOwnerId !== req.session.userId &&
       !req.session.isAdmin
     ) {
       return res.status(403).send("无权访问此文件");
@@ -227,7 +369,12 @@ exports.deleteFile = async (req, res) => {
     }
 
     // 检查权限（只有所有者或管理员可以删除）
-    if (file.userId !== req.session.userId && !req.session.isAdmin) {
+    // file.userId 被 populate 后是对象 {_id, username}
+    const fileOwnerId = file.userId._id
+      ? file.userId._id.toString()
+      : file.userId.toString();
+
+    if (fileOwnerId !== req.session.userId && !req.session.isAdmin) {
       return res.json({ success: false, message: "无权删除此文件" });
     }
 
@@ -244,6 +391,118 @@ exports.deleteFile = async (req, res) => {
   } catch (error) {
     console.error("删除文件错误:", error);
     res.json({ success: false, message: "删除失败: " + error.message });
+  }
+};
+
+// 重命名文件
+exports.renameFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { newName } = req.body;
+    const userId = req.session.userId;
+
+    if (!newName || !newName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "新文件名不能为空",
+      });
+    }
+
+    // 验证文件名字符
+    const invalidChars = /[\/\\:*?"<>|]/;
+    if (invalidChars.test(newName)) {
+      return res.status(400).json({
+        success: false,
+        message: '文件名不能包含以下字符: / \\ : * ? " < > |',
+      });
+    }
+
+    // 查找文件
+    const file = await FileModel.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ success: false, message: "文件不存在" });
+    }
+
+    // 检查权限
+    const fileOwnerId = file.userId._id
+      ? file.userId._id.toString()
+      : file.userId.toString();
+
+    if (fileOwnerId !== userId && !req.session.isAdmin) {
+      return res
+        .status(403)
+        .json({ success: false, message: "无权修改此文件" });
+    }
+
+    // 更新文件记录中的 originalName
+    await FileModel.update(fileId, { originalName: newName.trim() });
+
+    res.json({
+      success: true,
+      message: "文件重命名成功",
+    });
+  } catch (error) {
+    console.error("重命名文件错误:", error);
+    res.status(500).json({
+      success: false,
+      message: "重命名失败: " + error.message,
+    });
+  }
+};
+
+// 移动文件（更改分类）
+exports.moveFile = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { category } = req.body;
+    const userId = req.session.userId;
+
+    if (!category) {
+      return res.status(400).json({
+        success: false,
+        message: "请选择目标分类",
+      });
+    }
+
+    // 验证分类是否有效
+    const validCategories = ["code", "memo", "image", "other"];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: "无效的分类",
+      });
+    }
+
+    // 查找文件
+    const file = await FileModel.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ success: false, message: "文件不存在" });
+    }
+
+    // 检查权限
+    const fileOwnerId = file.userId._id
+      ? file.userId._id.toString()
+      : file.userId.toString();
+
+    if (fileOwnerId !== userId && !req.session.isAdmin) {
+      return res
+        .status(403)
+        .json({ success: false, message: "无权移动此文件" });
+    }
+
+    // 更新文件分类
+    await FileModel.update(fileId, { category: category });
+
+    res.json({
+      success: true,
+      message: "文件移动成功",
+    });
+  } catch (error) {
+    console.error("移动文件错误:", error);
+    res.status(500).json({
+      success: false,
+      message: "移动失败: " + error.message,
+    });
   }
 };
 
@@ -288,5 +547,52 @@ exports.updateFileCategory = async (req, res) => {
   } catch (error) {
     console.error("更新文件分类错误:", error);
     res.json({ success: false, message: "更新失败: " + error.message });
+  }
+};
+
+// 更改文件权限
+exports.changePermission = async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const { isPublic } = req.body;
+    const userId = req.session.userId;
+
+    if (typeof isPublic !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "权限参数无效",
+      });
+    }
+
+    // 查找文件
+    const file = await FileModel.findById(fileId);
+    if (!file) {
+      return res.status(404).json({ success: false, message: "文件不存在" });
+    }
+
+    // 检查权限
+    const fileOwnerId = file.userId._id
+      ? file.userId._id.toString()
+      : file.userId.toString();
+
+    if (fileOwnerId !== userId && !req.session.isAdmin) {
+      return res
+        .status(403)
+        .json({ success: false, message: "无权修改此文件" });
+    }
+
+    // 更新文件权限
+    await FileModel.update(fileId, { isPublic: isPublic });
+
+    res.json({
+      success: true,
+      message: `文件已设为${isPublic ? "公开" : "私有"}`,
+    });
+  } catch (error) {
+    console.error("更改文件权限错误:", error);
+    res.status(500).json({
+      success: false,
+      message: "权限更改失败: " + error.message,
+    });
   }
 };

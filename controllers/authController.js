@@ -24,13 +24,13 @@ exports.sendCode = async (req, res) => {
     }
 
     // 检查邮箱是否已注册
-    const existingUserByEmail = UserModel.findByEmail(email);
+    const existingUserByEmail = await UserModel.findByEmail(email);
     if (existingUserByEmail) {
       return res.json({ success: false, message: "该邮箱已被注册" });
     }
 
     // 检查用户名是否已存在
-    const existingUserByUsername = UserModel.findByUsername(username);
+    const existingUserByUsername = await UserModel.findByUsername(username);
     if (existingUserByUsername) {
       return res.json({ success: false, message: "该用户名已被使用" });
     }
@@ -39,7 +39,7 @@ exports.sendCode = async (req, res) => {
     const code = generateVerificationCode();
 
     // 保存验证码
-    VerificationCodeModel.save(email, code);
+    await VerificationCodeModel.save(email, code);
 
     // 发送邮件
     const result = await sendVerificationEmail(email, code);
@@ -126,8 +126,24 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error("注册错误:", error);
+
+    // 处理验证错误
+    let errorMessage = "服务器错误，请稍后重试";
+    if (error.name === "ValidationError") {
+      // Mongoose验证错误
+      const messages = Object.values(error.errors).map((e) => e.message);
+      errorMessage = messages.join("；");
+    } else if (error.code === 11000) {
+      // MongoDB唯一索引冲突
+      if (error.keyPattern.email) {
+        errorMessage = "该邮箱已被注册";
+      } else if (error.keyPattern.username) {
+        errorMessage = "该用户名已被使用";
+      }
+    }
+
     res.render("auth/register", {
-      error: "服务器错误，请稍后重试",
+      error: errorMessage,
       success: null,
     });
   }

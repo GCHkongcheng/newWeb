@@ -13,11 +13,23 @@ router.get("/", fileController.showFiles);
 // 上传文件
 router.post("/upload", upload.single("file"), fileController.uploadFile);
 
+// 创建文件
+router.post("/create", fileController.createFile);
+
 // 查看文件
 router.get("/view/:id", fileController.viewFile);
 
 // 下载文件
 router.get("/download/:id", fileController.downloadFile);
+
+// 重命名文件
+router.put("/:id/rename", fileController.renameFile);
+
+// 移动文件（更改分类）
+router.put("/:id/move", fileController.moveFile);
+
+// 更改文件权限
+router.put("/:id/permission", fileController.changePermission);
 
 // 删除文件
 router.delete("/:id", fileController.deleteFile);

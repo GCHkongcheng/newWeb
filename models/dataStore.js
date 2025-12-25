@@ -37,7 +37,11 @@ const UserModel = {
   },
 
   // 根据ID查找用户
-  async findById(userId) {
+  // includePassword: 是否包含密码字段（用于密码验证）
+  async findById(userId, includePassword = false) {
+    if (includePassword) {
+      return await User.findById(userId);
+    }
     return await User.findById(userId).select("-password");
   },
 

@@ -12,6 +12,33 @@
     min-height: 100vh;
   }
 
+  /* 移动端菜单滑入动画 */
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /* 确保下拉菜单不被遮罩 */
+  .dropdown-container {
+    position: relative;
+    z-index: 100;
+  }
+
+  /* 表格行需要允许溢出 */
+  table tbody tr {
+    position: relative;
+  }
+
   nav {
     background: #fff;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
