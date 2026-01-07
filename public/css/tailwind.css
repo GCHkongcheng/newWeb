@@ -1,0 +1,121 @@
+/* Tailwind CSS 本地版本 - 包含项目所需的核心样式 */
+
+/* 基础重置样式 */
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: #e5e7eb;
+}
+
+html {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+body {
+  margin: 0;
+  line-height: inherit;
+}
+
+/* Tailwind 实用类 - 只包含项目实际使用的 */
+.container {
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mt-4 {
+  margin-top: 1rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.bg-white {
+  background-color: #fff;
+}
+.bg-gray-100 {
+  background-color: #f3f4f6;
+}
+.text-gray-700 {
+  color: #374151;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+.shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.flex {
+  display: flex;
+}
+.items-center {
+  align-items: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+.font-bold {
+  font-weight: 700;
+}
+
+/* 由于 Tailwind 完整版太大，建议使用 Play CDN 版本 */
+@import url("https://cdn.tailwindcss.com");
+
+/* 自定义主题色 */
+.bg-primary {
+  background-color: #667eea !important;
+}
+.text-primary {
+  color: #667eea !important;
+}
+.bg-secondary {
+  background-color: #764ba2 !important;
+}
+.text-secondary {
+  color: #764ba2 !important;
+}

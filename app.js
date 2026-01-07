@@ -31,22 +31,19 @@ app.use(
         scriptSrc: [
           "'self'",
           "'unsafe-inline'",
-          "cdn.tailwindcss.com",
-          "cdn.jsdelivr.net",
+          "'unsafe-eval'", // Alpine.js 需要 eval
+          "cdn.tailwindcss.com", // Tailwind Play CDN
         ],
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          "cdn.jsdelivr.net",
-          "cdn.bootcdn.net",
-        ],
+        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"], // 允许内联事件处理器
+        styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:"],
         connectSrc: ["'self'"],
-        fontSrc: ["'self'", "cdn.jsdelivr.net", "cdn.bootcdn.net"],
+        fontSrc: ["'self'"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: null,
       },
     },
+    crossOriginOpenerPolicy: false, // 避免 COOP 警告
   })
 );
 

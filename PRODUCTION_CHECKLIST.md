@@ -84,7 +84,23 @@ server {
 - [x] 已启用 Gzip 压缩 (compression)
 - [x] 已配置 Session 持久化 (connect-mongo)
 - [x] 已配置安全头 (helmet)
+- [ ] **重要**: 生产环境应避免使用 Tailwind CSS CDN，建议改用构建版本
 - [ ] 考虑使用 CDN 加速静态资源 (可选)
+
+### Tailwind CSS 生产化建议 (可选)
+
+当前使用的是 Tailwind CSS CDN，这会影响性能。生产环境可以考虑：
+
+```bash
+# 安装 Tailwind CSS
+npm install -D tailwindcss
+npx tailwindcss init
+
+# 运行构建
+npx tailwindcss -i ./input.css -o ./public/css/output.css
+```
+
+然后在 views/partials/header.ejs 中替换 CDN 为本地样式表。
 
 ## 6. 监控与日志
 

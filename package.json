@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/styles.css --minify"
   },
   "keywords": [
     "express",
@@ -15,7 +16,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "alpinejs": "^3.15.3",
     "bcryptjs": "^2.4.3",
+    "bootstrap-icons": "^1.13.1",
     "compression": "^1.8.1",
     "connect-mongo": "^6.0.0",
     "dotenv": "^16.3.1",
@@ -30,9 +33,12 @@
     "morgan": "^1.10.1",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.7",
+    "tailwindcss": "^4.1.18",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "autoprefixer": "^10.4.23",
+    "nodemon": "^3.0.2",
+    "postcss": "^8.5.6"
   }
 }
