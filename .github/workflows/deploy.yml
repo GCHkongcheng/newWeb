@@ -1,0 +1,44 @@
+name: 自动同步代码到宝塔服务器
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SSH连接服务器并同步代码
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # 加入 Git 安全目录白名单
+            git config --global --add safe.directory ${{ secrets.TARGET_DIR }}
+
+            # 安装 git（CentOS 示例；Ubuntu 可换成 apt-get）
+            yum install -y git || true
+
+            cd ${{ secrets.TARGET_DIR }}
+
+            # 若目录未初始化，先 init
+            [ ! -d ".git" ] && git init
+
+            # 用 HTTPS + Token 设置远程地址（公有/私有库都能拉）
+            REPO_URL="https://x-access-token:${{ secrets.GIT_TOKEN }}@github.com/${{ github.repository }}.git"
+            git remote set-url origin "$REPO_URL" || git remote add origin "$REPO_URL"
+
+            # 强制同步最新代码
+            git fetch --all
+            git reset --hard origin/main
+            git clean -fd
+
+            # 恢复宝塔默认权限
+            chown -R www:www ${{ secrets.TARGET_DIR }}
