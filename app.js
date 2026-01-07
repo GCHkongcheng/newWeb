@@ -26,20 +26,26 @@ connectDB().then(async () => {
 app.use(
   helmet({
     contentSecurityPolicy: {
-      useDefaults: false, // 不使用默认值，完全自定义
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: [
           "'self'",
-          "'unsafe-inline'",
+          "'unsafe-inline'", // 允许内联脚本
           "'unsafe-eval'", // Alpine.js 需要 eval
           "cdn.tailwindcss.com", // Tailwind Play CDN
         ],
-        scriptSrcAttr: ["'unsafe-inline'", "'unsafe-hashes'"], // 允许内联事件处理器
+        scriptSrcElem: [
+          "'self'",
+          "'unsafe-inline'", // 允许内联 <script> 标签（如 tailwind.config）
+          "cdn.tailwindcss.com", // Tailwind CDN
+        ],
+        scriptSrcAttr: null, // 禁用限制，允许所有内联事件处理器
         styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrcElem: ["'self'", "'unsafe-inline'"],
+        styleSrcAttr: ["'unsafe-inline'"],
         imgSrc: ["'self'", "data:", "blob:"],
         connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
+        fontSrc: ["'self'", "data:"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         formAction: ["'self'"],
@@ -47,7 +53,7 @@ app.use(
         upgradeInsecureRequests: null,
       },
     },
-    crossOriginOpenerPolicy: false, // 避免 COOP 警告
+    crossOriginOpenerPolicy: false,
   })
 );
 
