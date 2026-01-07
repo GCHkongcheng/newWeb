@@ -26,6 +26,7 @@ connectDB().then(async () => {
 app.use(
   helmet({
     contentSecurityPolicy: {
+      useDefaults: false, // 不使用默认值，完全自定义
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: [
@@ -40,6 +41,9 @@ app.use(
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
         objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
         upgradeInsecureRequests: null,
       },
     },
