@@ -2,6 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const config = require("../config/config");
+const constants = require("../config/constants");
 const iconv = require("iconv-lite");
 
 // 允许的文件扩展名
@@ -86,7 +87,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 3 * 1024 * 1024, // 限制 3MB
+    fileSize: constants.MAX_UPLOAD_SIZE,
   },
 });
 

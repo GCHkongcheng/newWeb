@@ -9,6 +9,13 @@ const {
   NotFoundError,
   ForbiddenError,
 } = require("../middlewares/errorHandler");
+const constants = require("../config/constants");
+const mimeTypes = require("../config/mimeTypes");
+const {
+  checkFileOwnership,
+  calculateStoragePercent,
+  isImageFile,
+} = require("../utils/fileHelper");
 
 // 显示文件列表页面
 exports.showFiles = async (req, res, next) => {
@@ -28,8 +35,8 @@ exports.showFiles = async (req, res, next) => {
 
     // 计算存储空间
     const usedStorage = await FileModel.getUserStorageUsed(userId);
-    const maxStorage = 500 * 1024 * 1024; // 500MB
-    const storagePercent = ((usedStorage / maxStorage) * 100).toFixed(1);
+    const maxStorage = constants.MAX_USER_STORAGE;
+    const storagePercent = calculateStoragePercent(usedStorage, maxStorage);
 
     res.render("files/index", {
       user: req.user,
@@ -59,7 +66,7 @@ exports.uploadFile = async (req, res, next) => {
     const category = req.body.category || "other";
 
     // 检查用户存储空间
-    const maxStorage = 500 * 1024 * 1024; // 500MB
+    const maxStorage = constants.MAX_USER_STORAGE;
     const usedStorage = await FileModel.getUserStorageUsed(userId);
     const fileSize = req.file.size;
 
@@ -107,29 +114,30 @@ exports.createFile = async (req, res) => {
     }
 
     // 验证文件名字符
-    const invalidChars = /[\/\\:*?"<>|]/;
-    if (invalidChars.test(filename)) {
+    const { validateFilename } = require("../utils/fileHelper");
+    const validation = validateFilename(filename);
+    if (!validation.valid) {
       return res.status(400).json({
         success: false,
-        message: '文件名不能包含以下字符: / \\ : * ? " < > |',
+        message: validation.message,
       });
     }
 
-    // 检查内容大小（5MB限制）
+    // 检查内容大小
     const contentBuffer = Buffer.from(content, "utf8");
     const contentSize = contentBuffer.length;
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = constants.MAX_FILE_CONTENT_SIZE;
     if (contentSize > maxSize) {
       return res.status(400).json({
         success: false,
         message: `文件内容过大！当前: ${(contentSize / 1024 / 1024).toFixed(
           2
-        )}MB，最大: 5MB`,
+        )}MB，最大: ${maxSize / 1024 / 1024}MB`,
       });
     }
 
     // 检查用户存储空间
-    const maxStorage = 500 * 1024 * 1024; // 500MB
+    const maxStorage = constants.MAX_USER_STORAGE;
     const usedStorage = await FileModel.getUserStorageUsed(userId);
     if (usedStorage + contentSize > maxStorage) {
       return res.status(400).json({
@@ -140,37 +148,12 @@ exports.createFile = async (req, res) => {
           1024
         ).toFixed(2)}MB，该文件大小 ${(contentSize / 1024 / 1024).toFixed(
           2
-        )}MB，总容量 500MB`,
+        )}MB，总容量 ${maxStorage / 1024 / 1024}MB`,
       });
     }
 
     // 确定MIME类型
     const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
-    const mimeTypes = {
-      ".txt": "text/plain",
-      ".md": "text/markdown",
-      ".js": "text/javascript",
-      ".py": "text/x-python",
-      ".html": "text/html",
-      ".css": "text/css",
-      ".json": "application/json",
-      ".xml": "application/xml",
-      ".sql": "text/x-sql",
-      ".sh": "text/x-sh",
-      ".yaml": "text/yaml",
-      ".yml": "text/yaml",
-      ".java": "text/x-java",
-      ".cpp": "text/x-c++src",
-      ".c": "text/x-c",
-      ".php": "text/x-php",
-      ".rb": "text/x-ruby",
-      ".go": "text/x-go",
-      ".rs": "text/x-rustsrc",
-      ".ts": "text/typescript",
-      ".vue": "text/x-vue",
-      ".jsx": "text/jsx",
-      ".tsx": "text/tsx",
-    };
     const mimetype = mimeTypes[ext] || "text/plain";
 
     // 生成唯一文件名
@@ -226,31 +209,15 @@ exports.viewFile = async (req, res, next) => {
     }
 
     // 检查权限（私有文件只能所有者查看）
-    // file.userId 被 populate 后是对象 {_id, username}
-    const fileOwnerId = file.userId._id
-      ? file.userId._id.toString()
-      : file.userId.toString();
-
     if (
       !file.isPublic &&
-      fileOwnerId !== req.session.userId &&
-      !req.session.isAdmin
+      !checkFileOwnership(file, req.session.userId, req.session.isAdmin)
     ) {
       throw new ForbiddenError("无权访问此文件");
     }
 
     // 检查是否为图片文件
-    const ext = path.extname(file.originalName).toLowerCase();
-    const imageExts = [
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".gif",
-      ".bmp",
-      ".webp",
-      ".svg",
-    ];
-    const isImage = imageExts.includes(ext);
+    const isImage = isImageFile(file.originalName);
 
     // 读取文件内容并自动检测编码（仅对非图片文件）
     let content = "";
@@ -313,15 +280,9 @@ exports.downloadFile = async (req, res, next) => {
     }
 
     // 检查权限
-    // file.userId 被 populate 后是对象 {_id, username}
-    const fileOwnerId = file.userId._id
-      ? file.userId._id.toString()
-      : file.userId.toString();
-
     if (
       !file.isPublic &&
-      fileOwnerId !== req.session.userId &&
-      !req.session.isAdmin
+      !checkFileOwnership(file, req.session.userId, req.session.isAdmin)
     ) {
       throw new ForbiddenError("无权访问此文件");
     }
@@ -343,12 +304,7 @@ exports.deleteFile = async (req, res, next) => {
     }
 
     // 检查权限（只有所有者或管理员可以删除）
-    // file.userId 被 populate 后是对象 {_id, username}
-    const fileOwnerId = file.userId._id
-      ? file.userId._id.toString()
-      : file.userId.toString();
-
-    if (fileOwnerId !== req.session.userId && !req.session.isAdmin) {
+    if (!checkFileOwnership(file, req.session.userId, req.session.isAdmin)) {
       throw new ForbiddenError("无权删除此文件");
     }
 
@@ -374,13 +330,10 @@ exports.renameFile = async (req, res, next) => {
     const userId = req.session.userId;
 
     // 验证文件名
-    if (!newName || !newName.trim()) {
-      throw new ValidationError("新文件名不能为空");
-    }
-
-    const invalidChars = /[\/\\:*?"<>|]/;
-    if (invalidChars.test(newName)) {
-      throw new ValidationError('文件名不能包含以下字符: / \\ : * ? " < > |');
+    const { validateFilename } = require("../utils/fileHelper");
+    const validation = validateFilename(newName);
+    if (!validation.valid) {
+      throw new ValidationError(validation.message);
     }
 
     // 查找文件
@@ -390,11 +343,7 @@ exports.renameFile = async (req, res, next) => {
     }
 
     // 检查权限
-    const fileOwnerId = file.userId._id
-      ? file.userId._id.toString()
-      : file.userId.toString();
-
-    if (fileOwnerId !== userId && !req.session.isAdmin) {
+    if (!checkFileOwnership(file, userId, req.session.isAdmin)) {
       throw new ForbiddenError("无权修改此文件");
     }
 
@@ -422,7 +371,7 @@ exports.moveFile = async (req, res, next) => {
     }
 
     // 验证分类是否有效
-    const validCategories = ["code", "memo", "image", "other"];
+    const validCategories = Object.values(constants.FILE_CATEGORIES);
     if (!validCategories.includes(category)) {
       throw new ValidationError("无效的分类");
     }
@@ -434,11 +383,7 @@ exports.moveFile = async (req, res, next) => {
     }
 
     // 检查权限
-    const fileOwnerId = file.userId._id
-      ? file.userId._id.toString()
-      : file.userId.toString();
-
-    if (fileOwnerId !== userId && !req.session.isAdmin) {
+    if (!checkFileOwnership(file, userId, req.session.isAdmin)) {
       throw new ForbiddenError("无权移动此文件");
     }
 
@@ -452,21 +397,6 @@ exports.moveFile = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-// 创建分类
-exports.createCategory = async (req, res) => {
-  res.status(404).json({ success: false, message: "功能已禁用" });
-};
-
-// 更新分类
-exports.updateCategory = async (req, res) => {
-  res.status(404).json({ success: false, message: "功能已禁用" });
-};
-
-// 删除分类
-exports.deleteCategory = async (req, res) => {
-  res.status(404).json({ success: false, message: "功能已禁用" });
 };
 
 // 更新文件分类
@@ -516,11 +446,7 @@ exports.changePermission = async (req, res, next) => {
     }
 
     // 检查权限
-    const fileOwnerId = file.userId._id
-      ? file.userId._id.toString()
-      : file.userId.toString();
-
-    if (fileOwnerId !== userId && !req.session.isAdmin) {
+    if (!checkFileOwnership(file, userId, req.session.isAdmin)) {
       throw new ForbiddenError("无权修改此文件");
     }
 

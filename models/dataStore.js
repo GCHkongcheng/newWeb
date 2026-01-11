@@ -347,55 +347,11 @@ const VerificationCodeModel = {
   },
 };
 
-// ==================== 回收站模型 (暂时保留，后续可考虑用MongoDB实现) ====================
-const TrashModel = {
-  // 获取所有回收站文件
-  findAll() {
-    return [];
-  },
-
-  // 根据用户ID查找回收站文件
-  findByUserId(userId) {
-    return [];
-  },
-
-  // 根据ID查找回收站文件
-  findById(fileId) {
-    return null;
-  },
-
-  // 添加到回收站
-  add(fileData) {
-    return null;
-  },
-
-  // 从回收站恢复
-  restore(fileId) {
-    return null;
-  },
-
-  // 从回收站彻底删除
-  permanentDelete(fileId) {
-    return false;
-  },
-
-  // 清理过期文件
-  cleanExpired() {
-    return 0;
-  },
-
-  // 清空用户回收站
-  emptyByUserId(userId) {
-    return 0;
-  },
-};
-
 module.exports = {
   initializeData,
   UserModel,
   FileModel,
   VerificationCodeModel,
-  TrashModel,
   CommentModel,
   CategoryModel,
 };

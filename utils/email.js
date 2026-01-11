@@ -1,59 +1,42 @@
 const nodemailer = require("nodemailer");
 const config = require("../config/config");
 
+// 邮件服务商配置映射表
+const EMAIL_PROVIDERS = {
+  "qq.com": { service: "qq" },
+  "163.com": { host: "smtp.163.com", port: 465, secure: true },
+  "126.com": { host: "smtp.126.com", port: 465, secure: true },
+  "gmail.com": { service: "gmail" },
+};
+
 // 创建邮件传输器
 function createTransporter() {
-  // 根据邮箱类型自动选择配置
   const email = config.email.user.toLowerCase();
+  const domain = email.split("@")[1];
 
-  if (email.includes("@qq.com")) {
+  // 查找配置映射表
+  const providerConfig = EMAIL_PROVIDERS[domain];
+
+  if (providerConfig) {
     return nodemailer.createTransport({
-      service: "qq",
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-    });
-  } else if (email.includes("@163.com")) {
-    return nodemailer.createTransport({
-      host: "smtp.163.com",
-      port: 465,
-      secure: true, // 使用 SSL
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-    });
-  } else if (email.includes("@126.com")) {
-    return nodemailer.createTransport({
-      host: "smtp.126.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-    });
-  } else if (email.includes("@gmail.com")) {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: config.email.user,
-        pass: config.email.pass,
-      },
-    });
-  } else {
-    // 默认配置
-    return nodemailer.createTransport({
-      host: "smtp." + email.split("@")[1],
-      port: 465,
-      secure: true,
+      ...providerConfig,
       auth: {
         user: config.email.user,
         pass: config.email.pass,
       },
     });
   }
+
+  // 默认配置
+  return nodemailer.createTransport({
+    host: "smtp." + domain,
+    port: 465,
+    secure: true,
+    auth: {
+      user: config.email.user,
+      pass: config.email.pass,
+    },
+  });
 }
 
 // 生成6位数验证码

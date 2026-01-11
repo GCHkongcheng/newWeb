@@ -49,10 +49,7 @@ router.put(
 // 删除文件
 router.delete("/:id", fileController.deleteFile);
 
-// 分类管理
-router.post("/category/create", fileController.createCategory);
-router.put("/category/update", fileController.updateCategory);
-router.delete("/category/delete", fileController.deleteCategory);
+// 更新文件分类
 router.put("/category/update-file", fileController.updateFileCategory);
 
 module.exports = router;

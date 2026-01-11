@@ -1,215 +1,112 @@
 <%- include('../partials/header', { title: '关于我们', user: user }) %>
 
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-5xl mx-auto px-4 py-8">
   <!-- Page Header -->
-  <div class="text-center mb-12">
-    <div class="flex items-center justify-center mb-4">
-      <i class="bi bi-cloud-arrow-up text-6xl text-primary"></i>
-    </div>
-    <h1 class="text-4xl font-bold text-gray-900 mb-4">个人网盘系统</h1>
-    <p class="text-xl text-gray-600">安全、便捷、高效的云存储解决方案</p>
+  <div class="text-center mb-8">
+    <i class="bi bi-cloud-arrow-up text-5xl text-blue-500 mb-3"></i>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">个人网盘系统</h1>
+    <p class="text-gray-600">安全、便捷、高效的云存储解决方案</p>
   </div>
 
-  <!-- Features Section -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-    <!-- Feature Card 1 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-shield-check text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">安全可靠</h3>
-        <p class="text-gray-600">
-          采用 bcrypt 加密算法保护用户密码，支持邮箱验证码注册，确保账户安全
-        </p>
-      </div>
+  <!-- Features Grid -->
+  <div class="grid md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-shield-check text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">安全可靠</h3>
+      <p class="text-sm text-gray-600">bcrypt 加密，邮箱验证</p>
     </div>
 
-    <!-- Feature Card 2 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-folder text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">文件管理</h3>
-        <p class="text-gray-600">
-          支持多种文件类型上传、在线预览、下载，智能识别文件编码
-        </p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-folder text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">文件管理</h3>
+      <p class="text-sm text-gray-600">多格式支持，在线预览</p>
     </div>
 
-    <!-- Feature Card 3 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-trash text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">回收站功能</h3>
-        <p class="text-gray-600">
-          删除的文件自动进入回收站，30天内可随时恢复，防止误删
-        </p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-trash text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">回收站功能</h3>
+      <p class="text-sm text-gray-600">30天内可恢复删除文件</p>
     </div>
 
-    <!-- Feature Card 4 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-search text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">文件搜索</h3>
-        <p class="text-gray-600">快速搜索定位文件，支持按文件名实时过滤查询</p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-search text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">文件搜索</h3>
+      <p class="text-sm text-gray-600">实时搜索快速定位</p>
     </div>
 
-    <!-- Feature Card 5 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-code-square text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">代码高亮</h3>
-        <p class="text-gray-600">
-          支持多种编程语言的语法高亮显示，在线查看代码更便捷
-        </p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-code-square text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">代码高亮</h3>
+      <p class="text-sm text-gray-600">多语言语法高亮显示</p>
     </div>
 
-    <!-- Feature Card 6 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-globe text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">公共资源</h3>
-        <p class="text-gray-600">
-          支持文件公开分享，其他用户可查看、下载和评论公开文件
-        </p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-globe text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">公共资源</h3>
+      <p class="text-sm text-gray-600">支持文件公开分享</p>
     </div>
 
-    <!-- Feature Card 7 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-chat-dots text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">评论系统</h3>
-        <p class="text-gray-600">
-          对公共资源进行评论互动，管理员可管理所有评论
-        </p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-chat-dots text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">评论系统</h3>
+      <p class="text-sm text-gray-600">对公共资源进行互动</p>
     </div>
 
-    <!-- Feature Card 8 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-person-gear text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">用户中心</h3>
-        <p class="text-gray-600">自主修改用户名和密码，管理个人账户信息</p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-person-gear text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">用户中心</h3>
+      <p class="text-sm text-gray-600">自主管理账户信息</p>
     </div>
 
-    <!-- Feature Card 9 -->
-    <div
-      class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-    >
-      <div class="p-6">
-        <div
-          class="w-12 h-12 bg-primary bg-opacity-10 rounded-lg flex items-center justify-center mb-4"
-        >
-          <i class="bi bi-gear text-2xl text-primary"></i>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-2">后台管理</h3>
-        <p class="text-gray-600">
-          管理员可管理所有用户、文件，查看系统统计信息
-        </p>
-      </div>
+    <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+      <i class="bi bi-gear text-3xl text-blue-500 mb-2"></i>
+      <h3 class="font-bold mb-1">后台管理</h3>
+      <p class="text-sm text-gray-600">管理用户和文件数据</p>
     </div>
   </div>
 
-  <!-- 想说的话 Section -->
-  <div class="bg-white rounded-xl shadow-md overflow-hidden mb-12">
-    <div class="bg-gradient-to-r from-primary to-secondary p-6">
-      <h2 class="text-2xl font-bold text-white flex items-center">
-        <i class="bi bi-heart mr-3"></i>
-        想说的话
+  <!-- About Content -->
+  <div class="bg-white rounded-lg shadow mb-6">
+    <div class="bg-gradient-to-r from-blue-400 to-blue-500 p-4">
+      <h2 class="text-xl font-bold text-white flex items-center">
+        <i class="bi bi-heart mr-2"></i>关于项目
       </h2>
     </div>
-    <div class="p-8">
-      <div class="text-gray-700 leading-relaxed space-y-4">
-        <p class="text-lg">感谢您使用这个个人网盘系统！</p>
-        <p>
-          这只是一个便于能够快速传输文件的网页，刚开始只是为了可以方便查看代码文件。在学校机房时可以不登陆qq等软件保存代码文件。
-        </p>
-        <p>
-          大部分的代码框架都是由claude实现的，前端用Tailwind+Bootstrap(<span
-            class="italic text-sm"
-            >不会真有人手写css吧</span
-          >)，后端用nodejs+express，Multer处理文件上传，数据库用的mongoDB。
-        </p>
-        <p>
-          本项目已经开源，欢迎访问我的
-          <a
-            href="https://github.com/GCHkongcheng/newWeb"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-primary underline"
-            >GitHub 仓库</a
-          >
-          查看详情。
-        </p>
-        <p class="text-primary font-semibold mt-6">祝您使用愉快！</p>
-      </div>
+    <div class="p-6 text-gray-700 space-y-3">
+      <p>感谢您使用这个个人网盘系统！</p>
+      <p>
+        这只是一个便于能够快速传输文件的网页，刚开始只是为了可以方便查看代码文件。在学校机房时可以不登陆qq等软件保存代码文件。
+      </p>
+      <p>
+        大部分的代码框架都是由claude实现的，前端用Tailwind+Bootstrap(<span
+          class="italic text-sm"
+          >不会真有人手写css吧</span
+        >)，后端用nodejs+express，Multer处理文件上传，数据库用的mongoDB。
+      </p>
+      <p>
+        本项目已经开源，欢迎访问我的
+        <a
+          href="https://github.com/GCHkongcheng/newWeb"
+          target="_blank"
+          class="text-blue-600 underline"
+          >GitHub 仓库</a
+        >
+        查看详情。
+      </p>
+      <p class="text-blue-600 font-semibold">祝您使用愉快！</p>
     </div>
   </div>
 
-  <!-- Contact Section -->
+  <!-- Contact -->
   <div
-    class="bg-gradient-to-r from-primary to-secondary rounded-xl shadow-md overflow-hidden p-8 text-center text-white"
+    class="bg-gradient-to-r from-blue-400 to-cyan-500 rounded-lg shadow p-6 text-center text-white"
   >
-    <h2 class="text-2xl font-bold mb-4">联系我</h2>
-    <p class="text-white text-opacity-90 mb-6">
-      如有任何问题或建议，欢迎通过以下方式联系我
-    </p>
-    <div class="flex flex-wrap justify-center gap-4">
+    <h2 class="text-xl font-bold mb-3">联系我</h2>
+    <p class="text-white/90 mb-4 text-sm">如有任何问题或建议，欢迎联系</p>
+    <div class="flex flex-wrap justify-center gap-3 text-sm">
       <a
         href="mailto:2839474636@qq.com"
-        class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all"
+        class="flex items-center gap-2 bg-white/20 px-3 py-2 rounded hover:bg-white/30 transition"
         target="_blank"
       >
         <i class="bi bi-envelope"></i>
@@ -217,27 +114,24 @@
       </a>
       <a
         href="https://github.com/gchkongcheng"
-        class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all"
+        class="flex items-center gap-2 bg-white/20 px-3 py-2 rounded hover:bg-white/30 transition"
         target="_blank"
-        rel="noopener noreferrer"
       >
         <i class="bi bi-github"></i>
         <span>github.com/gchkongcheng</span>
       </a>
-      <div
-        class="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-lg"
-      >
+      <div class="flex items-center gap-2 bg-white/20 px-3 py-2 rounded">
         <i class="bi bi-wechat"></i>
         <span>微信公众号：GCH空城</span>
       </div>
     </div>
   </div>
 
-  <!-- Back Button -->
-  <div class="mt-8 text-center">
+  <!-- Back -->
+  <div class="mt-6 text-center">
     <a
       href="/"
-      class="inline-flex items-center space-x-2 text-primary hover:text-secondary transition-colors"
+      class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 transition"
     >
       <i class="bi bi-arrow-left"></i>
       <span>返回首页</span>
