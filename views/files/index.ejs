@@ -106,8 +106,7 @@
           <!-- 固定分类 -->
           <% const fixedCategories = [ { id: 'code', name: '代码', icon:
           'bi-code-slash' }, { id: 'memo', name: '备忘', icon: 'bi-journal-text'
-          }, { id: 'image', name: '图片', icon: 'bi-image' }, { id: 'other',
-          name: '其他', icon: 'bi-folder' } ]; %> <%
+          }, { id: 'other', name: '其他', icon: 'bi-folder' } ]; %> <%
           fixedCategories.forEach(category => { %>
           <li>
             <a
@@ -196,8 +195,10 @@
                   <i
                     class="bi <%= isImage ? 'bi-image' : 'bi-file-earmark-text' %> text-2xl text-primary mr-3"
                   ></i>
-                  <span class="text-sm font-medium text-gray-900"
-                    ><%= file.originalName %></span
+                  <a
+                    href="/files/view/<%= file.id %>"
+                    class="text-sm font-medium text-gray-900 hover:text-primary hover:underline"
+                    ><%= file.originalName %></a
                   >
                 </div>
               </td>
@@ -329,9 +330,12 @@
                 class="bi <%= isImageMobile ? 'bi-image' : 'bi-file-earmark-text' %> text-3xl text-primary mr-3 flex-shrink-0"
               ></i>
               <div class="min-w-0 flex-1">
-                <h3 class="text-sm font-medium text-gray-900 truncate">
+                <a
+                  href="/files/view/<%= file.id %>"
+                  class="text-sm font-medium text-gray-900 truncate hover:text-primary hover:underline block"
+                >
                   <%= file.originalName %>
-                </h3>
+                </a>
                 <p class="text-xs text-gray-500">
                   <%= (file.size / 1024).toFixed(2) %> KB
                 </p>
@@ -425,7 +429,6 @@
           <p class="mt-2 text-xs text-gray-500">
             支持代码: txt, md, cpp, py, js, html, css, json, xml, java, c, h,
             cs<br />
-            支持图片: jpg, jpeg, png, gif, bmp, webp, svg<br />
             <span class="text-red-600 font-medium">单个文件最大 3MB</span>
           </p>
         </div>
@@ -453,7 +456,6 @@
           >
             <option value="code">代码</option>
             <option value="memo">备忘</option>
-            <option value="image">图片</option>
             <option value="other" selected>其他</option>
           </select>
         </div>
@@ -546,7 +548,6 @@
             >
               <option value="code">代码</option>
               <option value="memo" selected>备忘</option>
-              <option value="image">图片</option>
               <option value="other">其他</option>
             </select>
           </div>
@@ -1354,34 +1355,13 @@
 
     if (fileInput.files.length > 0) {
       const file = fileInput.files[0];
-      const fileName = file.name.toLowerCase();
-      const ext = fileName.substring(fileName.lastIndexOf("."));
-
-      // 图片扩展名
-      const imageExts = [
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".webp",
-        ".svg",
-      ];
-
-      if (imageExts.includes(ext)) {
-        // 如果是图片，只显示图片选项并自动选择
-        categorySelect.innerHTML = '<option value="image">图片</option>';
-        categorySelect.value = "image";
-        categorySelect.disabled = true;
-      } else {
-        // 如果不是图片，显示其他选项（不包括图片）
-        categorySelect.innerHTML = `
-          <option value="code">代码</option>
-          <option value="memo">备忘</option>
-          <option value="other" selected>其他</option>
-        `;
-        categorySelect.disabled = false;
-      }
+      // 文件分类选项（移除图片分类）
+      categorySelect.innerHTML = `
+        <option value="code">代码</option>
+        <option value="memo">备忘</option>
+        <option value="other" selected>其他</option>
+      `;
+      categorySelect.disabled = false;
     }
   }
 

@@ -60,17 +60,6 @@ function validateFilename(filename) {
 }
 
 /**
- * 检查是否为图片文件
- * @param {String} filename - 文件名
- * @returns {Boolean} - 是否是图片
- */
-function isImageFile(filename) {
-  const constants = require("../config/constants");
-  const ext = filename.substring(filename.lastIndexOf(".")).toLowerCase();
-  return constants.IMAGE_EXTENSIONS.includes(ext);
-}
-
-/**
  * 计算存储空间使用百分比
  * @param {Number} usedStorage - 已使用空间（字节）
  * @param {Number} maxStorage - 最大空间（字节）
@@ -84,6 +73,5 @@ module.exports = {
   checkFileOwnership,
   formatFileSize,
   validateFilename,
-  isImageFile,
   calculateStoragePercent,
 };

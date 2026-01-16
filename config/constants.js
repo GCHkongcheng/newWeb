@@ -13,12 +13,8 @@ module.exports = {
   FILE_CATEGORIES: {
     CODE: "code",
     MEMO: "memo",
-    IMAGE: "image",
     OTHER: "other",
   },
-
-  // 允许的图片扩展名
-  IMAGE_EXTENSIONS: [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"],
 
   // 存储警告阈值
   STORAGE_WARNING_THRESHOLD: 70, // 70% 存储空间使用提醒

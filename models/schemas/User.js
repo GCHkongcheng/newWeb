@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    storageQuota: {
+      type: Number,
+      default: 500 * 1024 * 1024, // 默认500MB
+    },
   },
   {
     timestamps: true, // 自动添加createdAt和updatedAt

@@ -44,6 +44,10 @@
             注册时间: <%= new Date(user.createdAt).toLocaleDateString('zh-CN')
             %>
           </p>
+          <p class="text-sm text-white text-opacity-75 mt-1">
+            <i class="bi bi-hdd mr-1"></i>
+            存储配额: <%= (user.storageQuota / 1024 / 1024).toFixed(0) %> MB
+          </p>
         </div>
       </div>
     </div>

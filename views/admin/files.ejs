@@ -13,12 +13,31 @@
   </div>
 
   <!-- Header -->
-  <div class="mb-8">
+  <div class="mb-6">
     <h1 class="text-3xl font-bold text-gray-900 flex items-center mb-2">
       <i class="bi bi-file-earmark-text mr-3 text-primary"></i>
       文件管理
     </h1>
     <p class="text-gray-600">管理所有用户上传的文件</p>
+  </div>
+
+  <!-- 筛选器 -->
+  <div class="mb-4 bg-white rounded-lg shadow p-4">
+    <div class="flex items-center gap-3">
+      <label class="text-sm font-medium text-gray-700">筛选用户:</label>
+      <select
+        id="userFilter"
+        onchange="filterFiles()"
+        class="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary"
+      >
+        <option value="">全部用户</option>
+        <% const uniqueUsers = [...new Set(files.map(f => f.uploaderName))]; %>
+        <% uniqueUsers.forEach(username => { %>
+        <option value="<%= username %>"><%= username %></option>
+        <% }); %>
+      </select>
+      <span id="fileCount" class="text-sm text-gray-600"></span>
+    </div>
   </div>
 
   <% if (files.length === 0) { %>
@@ -29,97 +48,80 @@
   </div>
   <% } else { %>
   <!-- Desktop Table View -->
-  <div class="hidden lg:block bg-white rounded-xl shadow-md overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+  <div class="hidden lg:block bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full">
+      <thead class="bg-gray-100">
         <tr>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             文件名
           </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             上传者
           </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             大小
           </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             类型
           </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             状态
           </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             上传时间
           </th>
-          <th
-            class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-          >
+          <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">
             操作
           </th>
         </tr>
       </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
+      <tbody class="divide-y divide-gray-200">
         <% files.forEach(file => { %>
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4">
+        <tr
+          class="hover:bg-gray-50 file-row"
+          data-uploader="<%= file.uploaderName %>"
+        >
+          <td class="px-4 py-3">
             <div class="flex items-center">
-              <i class="bi bi-file-earmark-text text-2xl text-primary mr-3"></i>
-              <span class="text-sm font-medium text-gray-900"
-                ><%= file.originalName %></span
+              <i class="bi bi-file-earmark-text text-xl text-primary mr-2"></i>
+              <a
+                href="/files/view/<%= file.id %>"
+                class="text-sm hover:text-primary hover:underline"
+                ><%= file.originalName %></a
               >
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <i class="bi bi-person-circle mr-1"></i><%= file.uploaderName %>
+          <td class="px-4 py-3 text-sm text-gray-600">
+            <%= file.uploaderName %>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+          <td class="px-4 py-3 text-sm text-gray-600">
             <%= (file.size / 1024).toFixed(2) %> KB
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <span class="px-2 py-1 bg-gray-100 rounded text-xs"
-              ><%= file.mimetype %></span
-            >
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
+          <td class="px-4 py-3 text-sm text-gray-600"><%= file.mimetype %></td>
+          <td class="px-4 py-3">
             <% if (file.isPublic) { %>
-            <span
-              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+            <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-700"
+              >公开</span
             >
-              <i class="bi bi-globe mr-1"></i> 公开
-            </span>
             <% } else { %>
-            <span
-              class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+            <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700"
+              >私有</span
             >
-              <i class="bi bi-lock mr-1"></i> 私有
-            </span>
             <% } %>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-            <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+          <td class="px-4 py-3 text-sm text-gray-600">
+            <%= new Date(file.uploadedAt).toLocaleDateString('zh-CN') %>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+          <td class="px-4 py-3 space-x-2">
             <a
               href="/files/view/<%= file.id %>"
-              class="text-primary hover:text-secondary transition-colors"
+              class="text-primary hover:text-secondary"
             >
               <i class="bi bi-eye"></i>
             </a>
             <button
               onclick="deleteFile('<%= file.id %>')"
-              class="text-red-600 hover:text-red-800 transition-colors"
+              class="text-red-600 hover:text-red-800"
             >
               <i class="bi bi-trash"></i>
             </button>
@@ -131,53 +133,50 @@
   </div>
 
   <!-- Mobile Card View -->
-  <div class="lg:hidden space-y-4">
+  <div class="lg:hidden space-y-3">
     <% files.forEach(file => { %>
     <div
-      class="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow"
+      class="bg-white rounded-lg shadow p-4 file-card"
+      data-uploader="<%= file.uploaderName %>"
     >
-      <div class="flex items-start justify-between mb-3">
+      <div class="flex items-start justify-between mb-2">
         <div class="flex items-center flex-1 min-w-0">
-          <i
-            class="bi bi-file-earmark-text text-3xl text-primary mr-3 flex-shrink-0"
-          ></i>
+          <i class="bi bi-file-earmark-text text-2xl text-primary mr-2"></i>
           <div class="min-w-0 flex-1">
-            <h3 class="text-sm font-medium text-gray-900 truncate">
+            <a
+              href="/files/view/<%= file.id %>"
+              class="text-sm font-medium truncate hover:text-primary hover:underline block"
+            >
               <%= file.originalName %>
-            </h3>
+            </a>
             <p class="text-xs text-gray-500">
-              <i class="bi bi-person-circle mr-1"></i><%= file.uploaderName %> ·
-              <%= (file.size / 1024).toFixed(2) %> KB
+              <%= file.uploaderName %> · <%= (file.size / 1024).toFixed(2) %> KB
             </p>
           </div>
         </div>
         <% if (file.isPublic) { %>
-        <span
-          class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 flex-shrink-0 ml-2"
+        <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-700 ml-2"
+          >公开</span
         >
-          <i class="bi bi-globe"></i>
-        </span>
         <% } else { %>
-        <span
-          class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 flex-shrink-0 ml-2"
+        <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-700 ml-2"
+          >私有</span
         >
-          <i class="bi bi-lock"></i>
-        </span>
         <% } %>
       </div>
-      <div class="text-xs text-gray-500 mb-3">
-        <%= new Date(file.uploadedAt).toLocaleString('zh-CN') %>
+      <div class="text-xs text-gray-500 mb-2">
+        <%= new Date(file.uploadedAt).toLocaleDateString('zh-CN') %>
       </div>
-      <div class="flex space-x-2">
+      <div class="flex gap-2">
         <a
           href="/files/view/<%= file.id %>"
-          class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition-colors text-sm"
+          class="flex-1 text-center px-3 py-2 bg-primary text-white rounded-lg hover:bg-secondary text-sm"
         >
           <i class="bi bi-eye mr-1"></i>查看
         </a>
         <button
           onclick="deleteFile('<%= file.id %>')"
-          class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+          class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm"
         >
           <i class="bi bi-trash"></i>
         </button>
@@ -189,6 +188,29 @@
 </div>
 
 <script>
+  function filterFiles() {
+    const selectedUser = document.getElementById("userFilter").value;
+    const rows = document.querySelectorAll(".file-row");
+    const cards = document.querySelectorAll(".file-card");
+    let visibleCount = 0;
+
+    [...rows, ...cards].forEach((item) => {
+      const uploader = item.dataset.uploader;
+      if (!selectedUser || uploader === selectedUser) {
+        item.style.display = "";
+        visibleCount++;
+      } else {
+        item.style.display = "none";
+      }
+    });
+
+    document.getElementById(
+      "fileCount"
+    ).textContent = `显示 ${visibleCount} / <%= files.length %> 个文件`;
+  }
+
+  // 初始化计数
+  filterFiles();
   async function deleteFile(fileId) {
     if (!confirm("确定要删除这个文件吗？此操作不可恢复！")) {
       return;

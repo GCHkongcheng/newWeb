@@ -15,6 +15,12 @@ router.get("/users", adminController.users);
 // 文件管理
 router.get("/files", adminController.files);
 
+// 更新用户配额
+router.post("/users/quota", adminController.updateUserQuota);
+
+// 删除用户
+router.delete("/users/:id", adminController.deleteUser);
+
 // 删除文件
 router.delete("/files/:id", adminController.deleteFile);
 

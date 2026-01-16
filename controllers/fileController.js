@@ -23,6 +23,7 @@ exports.showFiles = async (req, res, next) => {
     const userId = req.session.userId;
     const files = await FileModel.findByUserId(userId);
     const categories = await CategoryModel.findAll();
+    const currentUser = await UserModel.findById(userId);
 
     // 为文件添加 id 字段（兼容视图）
     const filesWithId = files.map((file) => {
@@ -33,9 +34,9 @@ exports.showFiles = async (req, res, next) => {
       };
     });
 
-    // 计算存储空间
+    // 计算存储空间（使用用户的配额）
     const usedStorage = await FileModel.getUserStorageUsed(userId);
-    const maxStorage = constants.MAX_USER_STORAGE;
+    const maxStorage = currentUser.storageQuota || constants.MAX_USER_STORAGE;
     const storagePercent = calculateStoragePercent(usedStorage, maxStorage);
 
     res.render("files/index", {
@@ -65,8 +66,9 @@ exports.uploadFile = async (req, res, next) => {
     const description = req.body.description || "";
     const category = req.body.category || "other";
 
-    // 检查用户存储空间
-    const maxStorage = constants.MAX_USER_STORAGE;
+    // 检查用户存储空间（使用用户的配额）
+    const currentUser = await UserModel.findById(userId);
+    const maxStorage = currentUser.storageQuota || constants.MAX_USER_STORAGE;
     const usedStorage = await FileModel.getUserStorageUsed(userId);
     const fileSize = req.file.size;
 
@@ -136,8 +138,9 @@ exports.createFile = async (req, res) => {
       });
     }
 
-    // 检查用户存储空间
-    const maxStorage = constants.MAX_USER_STORAGE;
+    // 检查用户存储空间（使用用户的配额）
+    const currentUser = await UserModel.findById(userId);
+    const maxStorage = currentUser.storageQuota || constants.MAX_USER_STORAGE;
     const usedStorage = await FileModel.getUserStorageUsed(userId);
     if (usedStorage + contentSize > maxStorage) {
       return res.status(400).json({
@@ -216,51 +219,53 @@ exports.viewFile = async (req, res, next) => {
       throw new ForbiddenError("无权访问此文件");
     }
 
-    // 检查是否为图片文件
-    const isImage = isImageFile(file.originalName);
-
-    // 读取文件内容并自动检测编码（仅对非图片文件）
+    // 读取文件内容并自动检测编码
     let content = "";
-    if (!isImage) {
-      try {
-        const buffer = fs.readFileSync(file.path);
+    try {
+      const buffer = fs.readFileSync(file.path);
 
-        // 检测文件编码
-        const detected = jschardet.detect(buffer);
-        const encoding = detected.encoding;
+      // 检测文件编码
+      const detected = jschardet.detect(buffer);
+      const encoding = detected.encoding;
 
-        // 根据检测到的编码读取文件
-        if (
-          encoding &&
-          encoding.toLowerCase() !== "utf-8" &&
-          encoding.toLowerCase() !== "ascii"
-        ) {
-          // 如果是 GBK、GB2312 等编码，转换为 UTF-8
-          if (iconv.encodingExists(encoding)) {
-            content = iconv.decode(buffer, encoding);
-          } else {
-            // 尝试常见的中文编码
-            try {
-              content = iconv.decode(buffer, "gbk");
-            } catch (e) {
-              content = buffer.toString("utf8");
-            }
-          }
+      // 根据检测到的编码读取文件
+      if (
+        encoding &&
+        encoding.toLowerCase() !== "utf-8" &&
+        encoding.toLowerCase() !== "ascii"
+      ) {
+        // 如果是 GBK、GB2312 等编码，转换为 UTF-8
+        if (iconv.encodingExists(encoding)) {
+          content = iconv.decode(buffer, encoding);
         } else {
-          content = buffer.toString("utf8");
+          // 尝试常见的中文编码
+          try {
+            content = iconv.decode(buffer, "gbk");
+          } catch (e) {
+            content = buffer.toString("utf8");
+          }
         }
-      } catch (error) {
-        console.error("读取文件编码错误:", error);
-        content = fs.readFileSync(file.path, "utf8");
+      } else {
+        content = buffer.toString("utf8");
       }
+    } catch (error) {
+      console.error("读取文件编码错误:", error);
+      content = fs.readFileSync(file.path, "utf8");
     }
 
     // 获取上传者信息
     const uploader = await UserModel.findById(file.userId);
 
+    // 为文件添加id字段（兼容视图）
+    const fileObj = file.toObject ? file.toObject() : file;
+    const fileWithId = {
+      ...fileObj,
+      id: fileObj._id.toString(),
+    };
+
     res.render("files/view", {
       user: req.user,
-      file: file,
+      file: fileWithId,
       content: content,
       uploader: uploader,
     });

@@ -10,6 +10,7 @@ function renderProfile(res, user, success = null, error = null) {
       email: user.email,
       isAdmin: user.isAdmin,
       createdAt: user.createdAt,
+      storageQuota: user.storageQuota || 500 * 1024 * 1024,
     },
     success,
     error,

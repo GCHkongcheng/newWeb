@@ -38,6 +38,7 @@ app.use(
           "'self'",
           "'unsafe-inline'", // 允许内联 <script> 标签（如 tailwind.config）
           "cdn.tailwindcss.com", // Tailwind CDN
+          "cdnjs.cloudflare.com", // Highlight.js CDN
         ],
         scriptSrcAttr: null, // 禁用限制，允许所有内联事件处理器
         styleSrc: ["'self'", "'unsafe-inline'"],

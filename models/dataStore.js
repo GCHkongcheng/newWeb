@@ -18,7 +18,6 @@ async function initializeData() {
       const defaultCategories = [
         { name: "代码", icon: "bi-code-slash", isSystem: true },
         { name: "备忘", icon: "bi-journal-text", isSystem: true },
-        { name: "图片", icon: "bi-image", isSystem: true },
         { name: "其他", icon: "bi-folder", isSystem: true },
       ];
       await Category.insertMany(defaultCategories);
